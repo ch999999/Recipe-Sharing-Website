@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { validateToken } from "@/app/lib/auth"
-
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 
 export function HomeButton(){
     
@@ -11,14 +12,23 @@ export function HomeButton(){
     )
 }
 
-export function UserButtons(){
+export async function UserButtons(){
 
+    const tokenIsValid = await validateToken()
 
+    if(!tokenIsValid){
     return(
     <>
     <ul className="menu menu-horizontal px-1"><li><Link href="/users/login">Log In</Link></li></ul>
     <ul className="menu menu-horizontal px-1"><li><Link href="/users/signup">Sign up</Link></li></ul>
     </>
     )
+    }else{
+        return(
+        <>
+            <ul className="menu menu-horizontal px-1"><li><Link href="/users/logout">Log Out</Link></li></ul>
+        </>
+        )
+    }
 }
 
