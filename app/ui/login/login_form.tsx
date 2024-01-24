@@ -1,10 +1,6 @@
 'use client'
 
-import { FormError } from "@/app/lib/definitions";
 import { useFormState } from "react-dom"
-import { User } from "@/app/lib/definitions"
-import Link from 'next/link';
-import { CheckIcon } from "@heroicons/react/16/solid";
 import { userLogin } from "@/app/lib/actions";
 
 export default function Form(){
@@ -67,20 +63,6 @@ export default function Form(){
             />
             <PasswordError/>
         </div>
-
-        {/* <div className="form-control w-full">
-            <label className="label" htmlFor="password">
-                <span className="label-text">Confirm Password</span>
-            </label>
-            <input
-                type="password"
-                name="password-confirmation"
-                placeholder=""
-                className="input input-bordered w-full"
-                required
-            />
-            
-        </div> */}
 
         <div className="form-control w-full mt-4">
             

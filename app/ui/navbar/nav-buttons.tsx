@@ -1,7 +1,5 @@
 import Link from "next/link"
 import { validateToken } from "@/app/lib/auth"
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 export function HomeButton(){
     

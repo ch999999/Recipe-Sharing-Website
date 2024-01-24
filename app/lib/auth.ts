@@ -6,7 +6,6 @@ export async function getTokenFromCookie(){
     const cookieStore = cookies()
     const token = cookieStore.get("token")
     if(token){
-        console.log("Getting token: "+token.value)
         return token.value.toString()
     }
     return null;
@@ -30,14 +29,13 @@ export async function validateToken(){
     const tokenValidity = await checkToken()
 
     if(tokenValidity.status === 200){
-        console.log("Should be logged in")
         return true;
     }
-    console.log("Could not validate token")
     return false;
 }
 
 export async function deleteTokenFromCookie(){
+    console.log("Deleted token from cookie")
     cookies().delete("token")
 }
 

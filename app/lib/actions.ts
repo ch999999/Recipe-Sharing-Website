@@ -1,21 +1,13 @@
 'use server'
 
-import {z} from 'zod'
 import { createUser } from '../api/users'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { User } from './definitions'
 import { signinUser } from '../api/users'
 import { putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
 
 export type State = {
-    // error?:{
-    //     username?: string;
-    //     email?: string;
-    //     firstname?:string;
-    //     password?:string;
-    // }
     errorField?: string | null;
      message?: string | null;
 }
