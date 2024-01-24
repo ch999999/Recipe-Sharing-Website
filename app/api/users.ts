@@ -58,6 +58,7 @@ export async function signinUser(user: any){
         return res
     }catch(error){
         console.log("Error logging in: "+error)
+        return{errorField:"password", message:"Unknown error occured. Try again later"}
     }
 
 }

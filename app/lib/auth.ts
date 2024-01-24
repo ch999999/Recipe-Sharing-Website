@@ -37,5 +37,9 @@ export async function validateToken(){
     return false;
 }
 
+export async function deleteTokenFromCookie(){
+    cookies().delete("token")
+}
+
 
 

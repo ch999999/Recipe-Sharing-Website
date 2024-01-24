@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { User } from './definitions'
 import { signinUser } from '../api/users'
 import { putTokenIntoCookie } from './auth'
+import { deleteTokenFromCookie } from './auth'
 
 export type State = {
     // error?:{
@@ -17,6 +18,32 @@ export type State = {
     // }
     errorField?: string | null;
      message?: string | null;
+}
+
+export async function userLogin(prevState: State, formData:FormData){
+    const loginCreds = {
+        identifier: formData.get('identifier'),
+        password: formData.get('password')
+    }
+
+    const loginRes  = await signinUser(loginCreds)
+
+    if(loginRes.errorField){
+        return{
+            errorField: loginRes.errorField,
+            message: loginRes.message       
+        }
+    }else{
+        putTokenIntoCookie(loginRes.token)
+        revalidatePath('/')
+        redirect('/')
+    }
+}
+
+export async function signoutUser(){
+    deleteTokenFromCookie()
+    revalidatePath('/')
+    redirect('/')
 }
 
 export async function createNewUser(prevState: State, formData: FormData){
@@ -63,7 +90,8 @@ export async function createNewUser(prevState: State, formData: FormData){
         const loginRes = await signinUser(loginCreds)
 
         if(loginRes.errorField){
-            console.log("Error "+JSON.stringify(loginRes))
+            console.log("Error logging in: "+JSON.stringify(loginRes))
+            redirect('/users/login')
         }else{
             putTokenIntoCookie(loginRes.token)
             revalidatePath('/')
