@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { validateToken } from "@/app/lib/auth"
+import LogoutButton from "./logout-button"
 
 export function HomeButton(){
     
@@ -24,7 +25,9 @@ export async function UserButtons(){
     }else{
         return(
         <>
-            <ul className="menu menu-horizontal px-1"><li><Link href="/users/logout">Log Out</Link></li></ul>
+            <ul className="menu menu-horizontal px-1"><li><Link href="/recipes/new">Create Recipe</Link></li></ul>
+            {/* <ul className="menu menu-horizontal px-1"><li><Link href="/users/logout">Log Out</Link></li></ul> */}
+            <ul className="menu menu-horizontal px-1"><li><LogoutButton/></li></ul>
         </>
         )
     }

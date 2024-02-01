@@ -1,10 +1,6 @@
 'use client'
 
-import { FormError } from "@/app/lib/definitions";
 import { useFormState } from "react-dom"
-import { User } from "@/app/lib/definitions"
-import Link from 'next/link';
-import { CheckIcon } from "@heroicons/react/16/solid";
 import { createNewUser } from "@/app/lib/actions";
 
 export default function Form(){
@@ -54,6 +50,17 @@ export default function Form(){
         </div>
         }
         return <></>
+    }
+
+    function PasswordConfirmationError(){
+        if(state!=null && state.errorField=="password-confirmation"){
+            return <div id="password-confirmation-error" aria-live="polite" aria-atomic="true">
+                <p className="mt-2 text-sm text-red-500">
+                    {state.message}
+                </p>
+            </div>
+            }
+            return <></>
     }
 
     return (
@@ -131,8 +138,8 @@ export default function Form(){
             <PasswordError/>
         </div>
 
-        {/* <div className="form-control w-full">
-            <label className="label" htmlFor="password">
+        <div className="form-control w-full">
+            <label className="label" htmlFor="password-confirmation">
                 <span className="label-text">Confirm Password</span>
             </label>
             <input
@@ -140,10 +147,11 @@ export default function Form(){
                 name="password-confirmation"
                 placeholder=""
                 className="input input-bordered w-full"
+                aria-describedby = "password-confirmation-error"
                 required
             />
-            
-        </div> */}
+            <PasswordConfirmationError/>
+        </div>
 
         <div className="form-control w-full mt-4">
             

@@ -39,6 +39,12 @@ export async function signoutUser(){
 }
 
 export async function createNewUser(prevState: State, formData: FormData){
+    if(formData.get('password')!==formData.get('password-confirmation')){
+        return {
+            errorField: "password-confirmation",
+            message:"password and confirm-password do not match"
+        }
+    }
     const user = {
         username: formData.get('username'),
         email: formData.get('email'),
@@ -49,29 +55,8 @@ export async function createNewUser(prevState: State, formData: FormData){
 
     const res = await createUser(user)
 
-    //if res has key called errorField, that means validation error
+    //if response has property called errorField, that means validation error
     if(res.errorField){
-        // if(res.errorField=="username"){
-        //     return {
-        //         error: {username: res.message},
-        //         message:"Cursed"
-        //     }
-        // }else if(res.errorField=="email"){
-        //     return {
-        //         error: {email: res.message},
-        //         message:"Cursed"
-        //     }
-        // }else if(res.errorField=="firstname"){
-        //     return {
-        //         error: {firstname: res.message},
-        //         message:"Cursed"
-        //     }
-        // }else if(res.errorField=="password"){
-        //     return {
-        //         error: {password: res.message},
-        //         message:"Cursed"
-        //     }
-        // }
         return{
             errorField:res.errorField,
             message:res.message
