@@ -16,7 +16,7 @@ export default function Form(){
         </div>
         }
 
-        return <></>
+        return null
     }
 
     function EmailError(){
@@ -27,7 +27,7 @@ export default function Form(){
             </p>
         </div>
         }
-        return <></>
+        return null
     }
 
     function FirstnameError(){
@@ -38,7 +38,7 @@ export default function Form(){
             </p>
         </div>
         }
-        return <></>
+        return null
     }
 
     function PasswordError(){
@@ -49,7 +49,7 @@ export default function Form(){
             </p>
         </div>
         }
-        return <></>
+        return null
     }
 
     function PasswordConfirmationError(){
@@ -60,7 +60,7 @@ export default function Form(){
                 </p>
             </div>
             }
-            return <></>
+            return null
     }
 
     return (

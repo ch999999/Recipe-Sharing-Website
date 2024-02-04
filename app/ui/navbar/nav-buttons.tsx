@@ -26,7 +26,6 @@ export async function UserButtons(){
         return(
         <>
             <ul className="menu menu-horizontal px-1"><li><Link href="/recipes/new">Create Recipe</Link></li></ul>
-            {/* <ul className="menu menu-horizontal px-1"><li><Link href="/users/logout">Log Out</Link></li></ul> */}
             <ul className="menu menu-horizontal px-1"><li><LogoutButton/></li></ul>
         </>
         )
