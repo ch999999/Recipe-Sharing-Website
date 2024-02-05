@@ -1,12 +1,19 @@
 'use client'
 import { useFormState } from "react-dom"
 import { useState } from "react"
+import { useRef } from "react"
 
 
 const diets = [
     {id: 0, name: "Vegan"},
     {id: 1, name: "Carnivore"},
     {id: 2, name: "Keto"}
+]
+
+const difficulties = [
+    {id: 0, name: "Easy"},
+    {id: 1, name: "Medium"},
+    {id: 2, name: "Hard"}
 ]
 
 const units = [
@@ -30,6 +37,14 @@ const tags = [
     {id: 0, name: "Chicken"},
     {id: 1, name: "Rice"},
     {id: 2, name: "Sugar"}
+]
+
+const cuisines = [
+    {id:0, name: "European"},
+    {id:1, name:"Asian"},
+    {id:2, name:"Chinese"},
+    {id:3, name:"African"},
+    {id:4, name:"Western"}
 ]
 
 function test(evt){
@@ -79,6 +94,8 @@ let instructionCount=0
 let notesCount=0
 
 export default function Form(){
+    const descriptionImageRef = useRef(null)
+
     const [dietToAdd, setDietToAdd] = useState(diets[0].name) 
     const [selectedDiets, setSelectedDiets] = useState([]) as any
     //const [ingredientToUpate, setIngredientToUpdate] = useState(0)
@@ -87,6 +104,11 @@ export default function Form(){
     const [selectedTags, setSelectedTags] = useState([]) as any
     const [tagToAdd, setTagToAdd] = useState(tags[0].name)
     const [notes, setNotes] = useState([]) as any
+    const [descriptionImage, setDescriptionImage] = useState('No file chosen')
+
+    const cusineItems = cuisines.map(c=>
+        <option key={c.id} value={c.name}>{c.name}</option>
+        )
 
     const tagItems = tags.map(t=>
         <option key={t.id}>{t.name}</option>
@@ -96,6 +118,9 @@ export default function Form(){
         <option key={u.id}>{u.name}</option>
         )
 
+    const difficultyItems = difficulties.map(d=>
+        <option key={d.id} value={d.name}>{d.name}</option>
+        )
 
     const instructionItems = instructions.map(i=>
         {if(i.id===0){
@@ -151,7 +176,9 @@ export default function Form(){
       );
 
     const selectedDietItems = selectedDiets.map(diet=>
-        <li key={diet.id}><input disabled name="diets" value={diet.name}></input> <button type="button" onClick={()=>removeDiet(diet.id)} className="btn">remove</button></li>
+        
+        <li className="mt-3" key={diet.id}><input disabled name="diets" value={diet.name}></input> <button type="button" onClick={()=>removeDiet(diet.id)} className="btn -ml-3">remove</button></li>
+            
         ) 
     //  const inputs = selectedDiets.map(diet=>
     //     <input key={diet.id} name="diets">{diet.name}</input>
@@ -252,53 +279,55 @@ export default function Form(){
             <form className="ml-12 mr-12" onSubmit={test}>
                 <div className="flex flex-row">
                     <label className="label mr-4" htmlFor="title"><span className="text-lg font-bold">Title<span className="text-base text-red-600">*</span></span></label>
-                    <input type="text" name="title" className="input w-2/5"/>
+                    <input type="text" name="title" className="input w-96"/>
                 </div> 
                 <div className="form-control">
                     <label className="label" htmlFor="description"><span className="text-lg font-bold">Description<span className="text-base text-red-600">*</span></span></label>
                     <textarea className="textarea textarea-bordered h-64" name="description"/> 
                 </div> 
-                <div className="form-control">
-                    <label className="label" htmlFor="description-image"><span className="label-text">Description Image:</span></label>
-                    <input type="file" name="description-image"/>
+                <div className="">
+                    <label className="label" ><span className="text-lg font-bold">Description Image:</span></label>
+                    <input ref={descriptionImageRef} onChange={()=>setDescriptionImage(descriptionImageRef.current.files[0].name)} hidden type="file" name="description-image" id="description-image"/>
+                    <label htmlFor="description-image" className="relative btn w-30">Choose Image</label>
+                    <span className="ml-4 mr-4" id="file-chosen">{descriptionImage}</span>
+                    {descriptionImage!=="No file chosen" && <button type="button" className="btn" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage("No file chosen")}}>Remove</button>}
                 </div> 
-                <div className="form-control">
-                    <label className="label" htmlFor="difficulty"><span className="label-text">Difficulty</span></label>
-                    <select name="difficulty">
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
+                <div className="mt-3 flex flex-row">
+                    <label className="label mr-10" htmlFor="difficulty"><span className="text-lg font-bold">Difficulty<span className="text-base text-red-600">*</span></span></label>
+                    <select className="select w-36" name="difficulty">
+                        {difficultyItems}
                     </select>
                 </div>
-                <div className="form-control">
-                    <label className="label" htmlFor="cuisine"><span className="label-text">Cuisine</span></label>
-                    <select name="cusine">
-                        <option value="Asian">Asian</option>
-                        <option value="Western">Western</option>
-                        <option value="Mediterranean">Mediterranean</option>
+                <div className="mt-3 flex flex-row">
+                    <label className="label mr-16" htmlFor="cuisine"><span className="text-lg font-bold">Cuisine</span></label>
+                    <select className="select w-36" name="cusine">
+                        {cusineItems}
                     </select>
                 </div>
-                <div className="form-control">
-                    <label className="diets" htmlFor="diets"><span className="label-text">Diets</span></label>
-                    <select name="diets" onChange={e=>{setDietToAdd(e.target.value)}}>
+                <div className="mt-3 flex flex-col">
+                    <div className="flex flex-row">
+                    <label className="label mr-[82px]" htmlFor="diets"><span className="text-lg font-bold">Diets</span></label>
+                    <select className="select w-36" name="diets" onChange={e=>{setDietToAdd(e.target.value)}}>
                         {dietItems}
                     </select>
-                    <button type="button" className="btn" onClick={addDiet}>Add diet</button>
+                    <button type="button" className="ml-3 btn" onClick={addDiet}>Add diet</button>
+                    </div>
+                    {selectedDiets.length===0 && <p className="mt-2 ml-2 italic">No diets selected</p>}
                     <ol type="1" className="list-inside list-decimal">
                         {selectedDietItems}
                     </ol>
                 </div>
-                <div className="form-control ">
-                    <label className="label" htmlFor="prep-time"><span className="label-text">Preparation Time (minutes):</span></label>
-                    <input type="number" name="prep-time" className="input input-bordered w-full"/>
+                <div className="flex flex-row">
+                    <label className="label" htmlFor="prep-time"><span className="text-lg font-bold">Preperation Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <input type="number" name="prep-time" className=" ml-11 input input-bordered"/>
                 </div> 
-                <div className="form-control ">
-                    <label className="label" htmlFor="cook-time"><span className="label-text">Cook Time (minutes):</span></label>
-                    <input type="number" name="cook-time" className="input input-bordered w-full"/>
+                <div className="mt-3 flex flex-row ">
+                    <label className="label" htmlFor="cook-time"><span className="text-lg font-bold">Cook Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <input type="number" name="cook-time" className=" ml-[99px] input input-bordered"/>
                 </div>
-                <div className="form-control ">
-                    <label className="label" htmlFor="servings"><span className="label-text">Servings:</span></label>
-                    <input type="number" name="servings" className="input input-bordered w-full"/>
+                <div className="mt-3 flex flex-row ">
+                    <label className="label" htmlFor="servings"><span className="text-lg font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
+                    <input type="number" name="servings" className="ml-12 w-36 input input-bordered"/>
                 </div>
                 <div className="form-control">
                     <label className="label" htmlFor="ingredients"><span className="label-text">Ingredients:</span></label>
