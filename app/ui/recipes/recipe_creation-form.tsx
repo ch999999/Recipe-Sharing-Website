@@ -2,6 +2,7 @@
 import { useFormState } from "react-dom"
 import { useState } from "react"
 import { useRef } from "react"
+import { useEffect } from "react"
 
 
 const diets = [
@@ -95,16 +96,19 @@ let notesCount=0
 
 export default function Form(){
     const descriptionImageRef = useRef(null)
+    let instructionImageRef1 = useRef(null)
+    const instructionImagesRef = useRef(null)
 
     const [dietToAdd, setDietToAdd] = useState(diets[0].name) 
     const [selectedDiets, setSelectedDiets] = useState([]) as any
     //const [ingredientToUpate, setIngredientToUpdate] = useState(0)
-    const [ingredients, setIngredients] = useState([{id: 0, description: "Your first ingredient", quantity:0, unit:units[0].name}])
-    const [instructions, setInstructions] = useState([{id: 0, description: "Your first instruction"}])
+    const [ingredients, setIngredients] = useState([{id: 0, description: "Your first ingredient", quantity:0, unit:units[0].name, order:1}])
+    const [instructions, setInstructions] = useState([{id: 0, description: "Your first instruction", order:1, imageFileName:"No file chosen"}])
     const [selectedTags, setSelectedTags] = useState([]) as any
     const [tagToAdd, setTagToAdd] = useState(tags[0].name)
     const [notes, setNotes] = useState([]) as any
     const [descriptionImage, setDescriptionImage] = useState('No file chosen')
+    const [x, setx] = useState('No file chosen')
 
     const cusineItems = cuisines.map(c=>
         <option key={c.id} value={c.name}>{c.name}</option>
@@ -124,18 +128,35 @@ export default function Form(){
 
     const instructionItems = instructions.map(i=>
         {if(i.id===0){
-            return(<tbody key={i.id}>
-                <tr>
-                    <td><input name="instruction-description" placeholder={i.description}></input></td>
-                    <td><input type="file" name="instruction-image"/></td>
+            return(<tbody className=" border border-gray-300" key={i.id}>
+                <tr className=" border border-gray-300">
+                    <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
+                    <td className="border border-gray-300"><textarea className="w-[600px] p-1 rounded h-20" name="instruction-description" placeholder={i.description}></textarea></td>
+                    <td className="border border-gray-300">
+                        <div>
+                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>update(i.id)} hidden type="file" name="instruction-image" id="instruction-image"/>
+                        <label htmlFor="instruction-image" className="relative btn w-30">Choose Image</label>
+                        <span className="ml-4 mr-4" id="file-chosen">{i.imageFileName}</span>
+                        {i.imageFileName!=="No file chosen" && <button type="button" className="btn" onClick={()=>removeInstructionImageFile(i.order)}>Remove</button>}
+                        </div>
+                    </td>
+                    <td className="border border-gray-300"><button className="btn" type="button" disabled>remove</button></td>
                 </tr>
             </tbody>)
         }else{
             return(<tbody key={i.id}>
-                <tr>
-                    <td><input name="instruction-description" placeholder={i.description}></input></td>
-                    <td><input type="file" name="instruction-image"/></td>
-                    <td><button className="btn" type="button" onClick={()=>removeInstruction(i.id)}>remove</button></td>
+                <tr className="border border-gray-300">
+                    <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
+                    <td className="border border-gray-300"><textarea className="w-[600px] p-1 rounded h-20" name="instruction-description" placeholder={i.description}></textarea></td>
+                    <td className="border border-gray-300">
+                        <div>
+                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>update(i.id)} hidden type="file" name="instruction-image" id="instruction-image"/>
+                        <label htmlFor="instruction-image" className="relative btn w-30">Choose Image</label>
+                        <span className="ml-4 mr-4" id="file-chosen">{x}</span>
+                        {i.imageFileName!=="No file chosen" && <button type="button" className="btn" onClick={()=>removeInstructionImageFile(i.order)}>Remove</button>}
+                        </div>
+                    </td>
+                    <td className="border border-gray-300"><button className="btn" type="button" onClick={()=>{removeInstruction(i.id)}}>remove</button></td>
                 </tr>
             </tbody>)
         }
@@ -149,22 +170,26 @@ export default function Form(){
     const ingredientItems = ingredients.map(i=>
         {if(i.id===0){
 
-            return  (<tbody key={i.id}><tr>
-                        <td><input name="ingredient-description" placeholder={i.description}></input></td><td><input type="number" name="ingredient-quantity"></input></td>
-                            <td>
-                            <select name="ingredient-units">
+            return  ( <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
+                        <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
+                        <td className=" border border-gray-300"><textarea className=" w-[600px] p-1 rounded resize-none" name="ingredient-description" placeholder={i.description}></textarea></td><td><input className="input w-[172px]" type="number" name="ingredient-quantity"></input></td>
+                            <td className=" border border-gray-300">
+                            <select className="select" name="ingredient-units">
                                 {unitItems}
                             </select>
                             </td>
+                            <td className=" border border-gray-300"><button className=" btn" type="button" disabled>remove</button></td>
                     </tr></tbody>)
         }else{
-            return (<tbody key={i.id}><tr>
-                        <td><input name="ingredient-description" placeholder={i.description}></input></td><td><input type="number" name="ingredient-quantity"></input></td><td>
-                        <select name="ingredient-units" >
+            return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
+                        <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
+                        <td className=" border border-gray-300"><textarea className=" w-[600px] p-1 rounded resize-none" name="ingredient-description" placeholder={i.description}></textarea></td><td className=" border border-gray-300"><input className="input w-[172px]" type="number" name="ingredient-quantity"></input></td>
+                        <td className="border border-gray-300">
+                        <select className="select" name="ingredient-units" >
                                 {unitItems}
                         </select>
                         </td>
-                        <td><button className="btn" type="button" onClick={()=>removeIngredient(i.id)}>remove</button></td>
+                        <td className=" border border-gray-300"><button className="btn" type="button" onClick={()=>{removeIngredient(i.id)}}>remove</button></td>
             </tr></tbody>)
         }}
         
@@ -187,6 +212,38 @@ export default function Form(){
     const selectedTagItems = selectedTags.map(t=>
         <li key={t.id}><input disabled name="tags" value={t.name}></input> <button type="button" onClick={()=>removeTag(t.id)} className="btn">remove</button></li>
         )
+
+    function getMap(){
+        if(!instructionImagesRef.current){
+            instructionImagesRef.current = new Map()
+        }
+        return instructionImagesRef.current
+    }
+
+    function update(id){
+        const map = getMap();
+        const node = map.get(id);
+        console.log(node.current)
+        const nextInstructions = instructions.map(i=>{
+            if(i.id === id){
+                return{
+                    ...i,
+                    imageFileName: node.current.files[0].name
+                }
+            }else{
+                return i
+            }
+        })
+
+        setInstructions(nextInstructions)
+    }
+
+    function removeInstructionImageFile(order){
+        let copy = [...instructions]
+        copy[order-1].imageFileRef.current.files=null
+        copy[order-1].imageFileName="No file chosen"
+        setInstructions(copy)
+    }
 
     function addNote(){
         notesCount++;
@@ -216,16 +273,23 @@ export default function Form(){
         ingredientCount++;
         setIngredients([
             ...ingredients,
-            {id: ingredientCount, name: "", quantity:0, unit:units[0].name}
+            {id: ingredientCount, name: "", quantity:0, unit:units[0].name, order: ingredients.length+1}
         ])
     }
 
     function removeIngredient(id){
-        setIngredients(
-            ingredients.filter(i=>
-                i.id!==id
-                )
-        )
+
+        const copy = [...ingredients]
+        const afterRemovedIngredient = copy.filter(i=>
+            i.id!=id
+            )
+        
+            //reorder based on array index
+            for(let j=0; j<afterRemovedIngredient.length; j++){
+                afterRemovedIngredient[j].order = j+1
+            }
+        setIngredients(afterRemovedIngredient)
+
     }
 
     function addTag(){
@@ -262,21 +326,27 @@ export default function Form(){
         instructionCount++;
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:""}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen"}
         ])
+        
     }
 
     function removeInstruction(id){
-        setInstructions(
-            instructions.filter(i=>
-                i.id!==id)
-        )
+        const copy = [...instructions]
+        const afterRemovedInstruction = copy.filter(i=>
+            i.id!=id
+            )
+        
+            //reorder based on array index
+            for(let j=0; j<afterRemovedInstruction.length; j++){
+                afterRemovedInstruction[j].order = j+1
+            }
+        setInstructions(afterRemovedInstruction)
     }
 
     return(
-        
         <>
-            <form className="ml-12 mr-12" onSubmit={test}>
+            <form className="lg:ml-10 lg:mr-10" onSubmit={test}>
                 <div className="flex flex-row">
                     <label className="label mr-4" htmlFor="title"><span className="text-lg font-bold">Title<span className="text-base text-red-600">*</span></span></label>
                     <input type="text" name="title" className="input w-96"/>
@@ -287,11 +357,14 @@ export default function Form(){
                 </div> 
                 <div className="">
                     <label className="label" ><span className="text-lg font-bold">Description Image:</span></label>
-                    <input ref={descriptionImageRef} onChange={()=>setDescriptionImage(descriptionImageRef.current.files[0].name)} hidden type="file" name="description-image" id="description-image"/>
+                    <input ref={descriptionImageRef} onChange={()=>{console.log(descriptionImageRef.current); setDescriptionImage(descriptionImageRef.current.files[0].name)}} hidden type="file" name="description-image" id="description-image"/>
                     <label htmlFor="description-image" className="relative btn w-30">Choose Image</label>
                     <span className="ml-4 mr-4" id="file-chosen">{descriptionImage}</span>
                     {descriptionImage!=="No file chosen" && <button type="button" className="btn" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage("No file chosen")}}>Remove</button>}
                 </div> 
+
+                <section className="flex flex-col lg:flex-row">
+                <section>
                 <div className="mt-3 flex flex-row">
                     <label className="label mr-10" htmlFor="difficulty"><span className="text-lg font-bold">Difficulty<span className="text-base text-red-600">*</span></span></label>
                     <select className="select w-36" name="difficulty">
@@ -317,25 +390,34 @@ export default function Form(){
                         {selectedDietItems}
                     </ol>
                 </div>
+                </section>
+
+                <section className="lg:ml-10">
                 <div className="flex flex-row">
                     <label className="label" htmlFor="prep-time"><span className="text-lg font-bold">Preperation Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input type="number" name="prep-time" className=" ml-11 input input-bordered"/>
+                    <input type="number" name="prep-time" className="ml-2 lg:ml-11 w-36 input input-bordered"/>
                 </div> 
                 <div className="mt-3 flex flex-row ">
                     <label className="label" htmlFor="cook-time"><span className="text-lg font-bold">Cook Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input type="number" name="cook-time" className=" ml-[99px] input input-bordered"/>
+                    <input type="number" name="cook-time" className=" ml-16 lg:ml-[99px] w-36 input input-bordered"/>
                 </div>
                 <div className="mt-3 flex flex-row ">
                     <label className="label" htmlFor="servings"><span className="text-lg font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
-                    <input type="number" name="servings" className="ml-12 w-36 input input-bordered"/>
+                    <input type="number" name="servings" className=" ml-[162px] lg:ml-[196px] w-36 input input-bordered"/>
                 </div>
-                <div className="form-control">
-                    <label className="label" htmlFor="ingredients"><span className="label-text">Ingredients:</span></label>
-                    <button type="button" className="btn" onClick={addIngredient}>Add Ingredient</button>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Description</th><th>Quantity</th><th>Units</th>
+                </section>
+                </section>
+
+                <div className="flex flex-col">
+                    <div className="mt-3 flex flex-row">
+                    <label className="label" htmlFor="ingredients"><span className="text-lg font-bold">Ingredients<span className="text-base text-red-600">*</span></span></label>
+                    <button type="button" className="ml-5 w-36 btn bg-gray-100" onClick={addIngredient}>Add Ingredient</button>
+                    </div>
+
+                    <table className="table-auto w-[1085px] mt-3 border border-gray-300">
+                        <thead className="">
+                        <tr className="border border-gray-300">
+                            <th className=" border border-gray-300"></th><th className=" border border-gray-300"><span className="text-lg font-bold">Ingredient description</span></th><th className="border border-gray-300">Quantity</th><th className="border border-gray-300">Units</th><th className="border border-gray-300"></th>
                         </tr>
                         </thead>
                         
@@ -344,12 +426,15 @@ export default function Form(){
                     </table>
                 </div>
                 <div className="form-control">
-                    <label className="label" htmlFor="instructions"><span className="label-text">Instructions:</span></label>
-                    <button type="button" className="btn" onClick={addInstruction}>Add Instruction</button>
-                    <table>
+                    <div className="mt-3 flex flex-row">
+                    <label className="label" htmlFor="ingredients"><span className="text-lg font-bold">Instructions<span className="text-base text-red-600">*</span></span></label>
+                    <button type="button" className="ml-5 w-36 btn bg-gray-100" onClick={addInstruction}>Add Instruction</button>
+                    </div>
+
+                    <table className="table-auto w-[1085px] mt-3 border border-gray-300">
                         <thead>
-                        <tr>
-                            <th>Description</th><th>Image</th>
+                        <tr className="border border-gray-300">
+                            <th className="border border-gray-300"></th><th className=" border border-gray-300"><span className="text-lg font-bold">Instruction</span></th><th className=" border border-gray-300"><span className="text-lg font-bold">Image</span></th><th className="border border-gray-300"></th>
                         </tr>
                         </thead>
                         
