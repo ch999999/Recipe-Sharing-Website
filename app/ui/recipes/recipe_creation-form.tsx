@@ -96,19 +96,17 @@ let notesCount=0
 
 export default function Form(){
     const descriptionImageRef = useRef(null)
-    let instructionImageRef1 = useRef(null)
     const instructionImagesRef = useRef(null)
 
     const [dietToAdd, setDietToAdd] = useState(diets[0].name) 
     const [selectedDiets, setSelectedDiets] = useState([]) as any
     //const [ingredientToUpate, setIngredientToUpdate] = useState(0)
     const [ingredients, setIngredients] = useState([{id: 0, description: "Your first ingredient", quantity:0, unit:units[0].name, order:1}])
-    const [instructions, setInstructions] = useState([{id: 0, description: "Your first instruction", order:1, imageFileName:"No file chosen"}])
+    const [instructions, setInstructions] = useState([{id: 0, description: "Your first instruction", order:1, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image"}])
     const [selectedTags, setSelectedTags] = useState([]) as any
     const [tagToAdd, setTagToAdd] = useState(tags[0].name)
     const [notes, setNotes] = useState([]) as any
-    const [descriptionImage, setDescriptionImage] = useState('No file chosen')
-    const [x, setx] = useState('No file chosen')
+    const [descriptionImage, setDescriptionImage] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
 
     const cusineItems = cuisines.map(c=>
         <option key={c.id} value={c.name}>{c.name}</option>
@@ -133,14 +131,14 @@ export default function Form(){
                     <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
                     <td className="border border-gray-300"><textarea className="w-[600px] p-1 rounded h-20" name="instruction-description" placeholder={i.description}></textarea></td>
                     <td className="border border-gray-300">
-                        <div>
-                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>update(i.id)} hidden type="file" name="instruction-image" id="instruction-image"/>
-                        <label htmlFor="instruction-image" className="relative btn w-30">Choose Image</label>
-                        <span className="ml-4 mr-4" id="file-chosen">{i.imageFileName}</span>
-                        {i.imageFileName!=="No file chosen" && <button type="button" className="btn" onClick={()=>removeInstructionImageFile(i.order)}>Remove</button>}
+                        <div className="w-[349px] flex flex-row">
+                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
+                        <p className="mt-3 min-w-[180px] max-w-[180px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
+                        {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
                         </div>
                     </td>
-                    <td className="border border-gray-300"><button className="btn" type="button" disabled>remove</button></td>
+                    <td className=" border border-gray-300"><button className="btn" type="button" disabled>Remove</button></td>
                 </tr>
             </tbody>)
         }else{
@@ -149,11 +147,11 @@ export default function Form(){
                     <td className="border border-gray-300"><p className="w-8 text-center">{i.order}</p></td>
                     <td className="border border-gray-300"><textarea className="w-[600px] p-1 rounded h-20" name="instruction-description" placeholder={i.description}></textarea></td>
                     <td className="border border-gray-300">
-                        <div>
-                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>update(i.id)} hidden type="file" name="instruction-image" id="instruction-image"/>
-                        <label htmlFor="instruction-image" className="relative btn w-30">Choose Image</label>
-                        <span className="ml-4 mr-4" id="file-chosen">{x}</span>
-                        {i.imageFileName!=="No file chosen" && <button type="button" className="btn" onClick={()=>removeInstructionImageFile(i.order)}>Remove</button>}
+                    <div className="w-[349px] flex flex-row">
+                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
+                        <p className="mt-3 min-w-[180px] max-w-[180px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
+                        {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
                         </div>
                     </td>
                     <td className="border border-gray-300"><button className="btn" type="button" onClick={()=>{removeInstruction(i.id)}}>remove</button></td>
@@ -164,7 +162,7 @@ export default function Form(){
         )
     
     const noteItems = notes.map(n=>
-        <li key={n.id}><input name="notes"></input><button type="button" onClick={()=>removeNote(n.id)} className="btn">remove</button></li>
+        <li className="mt-3" key={n.id}><input className="ml-2 mr-2 w-[520px] input bg-slate-200" name="notes"></input><button type="button" onClick={()=>removeNote(n.id)} className="btn">remove</button></li>
         )
 
     const ingredientItems = ingredients.map(i=>
@@ -178,7 +176,7 @@ export default function Form(){
                                 {unitItems}
                             </select>
                             </td>
-                            <td className=" border border-gray-300"><button className=" btn" type="button" disabled>remove</button></td>
+                            <td className=" border border-gray-300"><button className=" btn" type="button" disabled>Remove</button></td>
                     </tr></tbody>)
         }else{
             return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
@@ -210,8 +208,16 @@ export default function Form(){
     //     )
 
     const selectedTagItems = selectedTags.map(t=>
-        <li key={t.id}><input disabled name="tags" value={t.name}></input> <button type="button" onClick={()=>removeTag(t.id)} className="btn">remove</button></li>
+        <li className="mt-2" key={t.id}><input disabled name="tags" value={t.name}></input> <button type="button" onClick={()=>removeTag(t.id)} className="btn -ml-5">remove</button></li>
         )
+
+    function countNodes(){
+        const map = getMap()
+        instructions.forEach(function(i){
+            const node=map.get(i.id)
+            console.log(node)
+        })
+    }
 
     function getMap(){
         if(!instructionImagesRef.current){
@@ -220,15 +226,35 @@ export default function Form(){
         return instructionImagesRef.current
     }
 
-    function update(id){
+    function removeInstructionImageFile(id){
         const map = getMap();
         const node = map.get(id);
-        console.log(node.current)
+        node.files = null;
+        const nextInstructions = instructions.map(i=>{
+            if(i.id===id){
+                return{
+                    ...i,
+                    imageFileName: "No file chosen",
+                    fileChosen: false,
+                    imageButtonText: "Choose Image"
+                }
+            }else{
+                return i
+            }
+        })
+        setInstructions(nextInstructions)
+    }
+
+    function updateInstructionImage(id){
+        const map = getMap();
+        const node = map.get(id);
         const nextInstructions = instructions.map(i=>{
             if(i.id === id){
                 return{
                     ...i,
-                    imageFileName: node.current.files[0].name
+                    imageFileName: node.files[0].name,
+                    fileChosen: true,
+                    imageButtonText: "Repick Image"
                 }
             }else{
                 return i
@@ -236,13 +262,6 @@ export default function Form(){
         })
 
         setInstructions(nextInstructions)
-    }
-
-    function removeInstructionImageFile(order){
-        let copy = [...instructions]
-        copy[order-1].imageFileRef.current.files=null
-        copy[order-1].imageFileName="No file chosen"
-        setInstructions(copy)
     }
 
     function addNote(){
@@ -326,12 +345,15 @@ export default function Form(){
         instructionCount++;
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen"}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false}
         ])
         
     }
 
     function removeInstruction(id){
+        // const map = getMap();
+        // const node = map.get(id);
+        // node.files = null;
         const copy = [...instructions]
         const afterRemovedInstruction = copy.filter(i=>
             i.id!=id
@@ -346,21 +368,21 @@ export default function Form(){
 
     return(
         <>
-            <form className="lg:ml-10 lg:mr-10" onSubmit={test}>
+            <form className="mb-20 mx-auto w-[1117px] border rounded-lg border-gray-400 p-4" onSubmit={test}>
                 <div className="flex flex-row">
-                    <label className="label mr-4" htmlFor="title"><span className="text-lg font-bold">Title<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label mr-[66px]" htmlFor="title"><span className="text-lg font-bold">Title<span className="text-base text-red-600">*</span></span></label>
                     <input type="text" name="title" className="input w-96"/>
                 </div> 
                 <div className="form-control">
                     <label className="label" htmlFor="description"><span className="text-lg font-bold">Description<span className="text-base text-red-600">*</span></span></label>
-                    <textarea className="textarea textarea-bordered h-64" name="description"/> 
+                    <textarea className="textarea w-[1085px] textarea-bordered h-48" name="description"/> 
                 </div> 
                 <div className="">
                     <label className="label" ><span className="text-lg font-bold">Description Image:</span></label>
-                    <input ref={descriptionImageRef} onChange={()=>{console.log(descriptionImageRef.current); setDescriptionImage(descriptionImageRef.current.files[0].name)}} hidden type="file" name="description-image" id="description-image"/>
-                    <label htmlFor="description-image" className="relative btn w-30">Choose Image</label>
-                    <span className="ml-4 mr-4" id="file-chosen">{descriptionImage}</span>
-                    {descriptionImage!=="No file chosen" && <button type="button" className="btn" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage("No file chosen")}}>Remove</button>}
+                    <input ref={descriptionImageRef} onChange={()=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"})}} hidden type="file" name="description-image" id="description-image"/>
+                    <label htmlFor="description-image" className="relative btn w-30">{descriptionImage.buttonText}</label>
+                    <span className="ml-4 mr-4" id="file-chosen">{descriptionImage.name}</span>
+                    {descriptionImage.fileChosen && <button type="button" className="btn" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>Remove</button>}
                 </div> 
 
                 <section className="flex flex-col lg:flex-row">
@@ -392,14 +414,14 @@ export default function Form(){
                 </div>
                 </section>
 
-                <section className="lg:ml-10">
+                <section className="lg:ml-[282px]">
                 <div className="flex flex-row">
-                    <label className="label" htmlFor="prep-time"><span className="text-lg font-bold">Preperation Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input type="number" name="prep-time" className="ml-2 lg:ml-11 w-36 input input-bordered"/>
+                    <label className="label mr-10" htmlFor="prep-time"><span className="text-lg font-bold">Preperation Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <input type="number" name="prep-time" className="w-36 input input-bordered"/>
                 </div> 
                 <div className="mt-3 flex flex-row ">
-                    <label className="label" htmlFor="cook-time"><span className="text-lg font-bold">Cook Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input type="number" name="cook-time" className=" ml-16 lg:ml-[99px] w-36 input input-bordered"/>
+                    <label className="label mr-24" htmlFor="cook-time"><span className="text-lg font-bold">Cook Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <input type="number" name="cook-time" className="  w-36 input input-bordered"/>
                 </div>
                 <div className="mt-3 flex flex-row ">
                     <label className="label" htmlFor="servings"><span className="text-lg font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
@@ -442,25 +464,34 @@ export default function Form(){
                         
                     </table>
                 </div>
-                <div className="form-control">
-                    <label className="label" htmlFor="notes"><span className="label-text">Notes:</span></label>
-                    <button type="button" className="btn" onClick={addNote}>Add Note</button>
+                <div className="mt-3 flex flex-col">
+                    <div className="flex flex-row">
+                    <label className="label mr-[71px]" htmlFor="notes"><span className="text-lg font-bold">Notes</span></label>
+                    <button type="button" className=" w-36 btn" onClick={addNote}>Add Note</button>
+                    </div>
+                    {notes.length===0&&<p className="mt-2 ml-2 italic">No notes added</p>}
                     <ol type="1" className="list-inside list-decimal">
                         {noteItems}
                     </ol>
                 </div>
-                <div className="form-control">
-                    <label htmlFor="tags"><span className="label-text">Tags</span></label>
-                    <select name="tags" onChange={e=>{setTagToAdd(e.target.value)}}>
+                <div className="mt-3 flex flex-col">
+                    <div className="flex flex-row">
+                    <label className="label mr-[82px]" htmlFor="tags"><span className="text-lg font-bold">Tags</span></label>
+                    <select className="select w-36 bg-slate-300" name="tags" onChange={e=>{setTagToAdd(e.target.value)}}>
                         {tagItems}
                     </select>
-                    <button type="button" className="btn" onClick={addTag}>Add tag</button>
+                    <button type="button" className="ml-3 btn" onClick={addTag}>Add tag</button>
+                    </div>
+                    {selectedTags.length===0&&<p className="mt-2 ml-2 italic">No tags selected</p>}
                     <ol type="1" className="list-inside list-decimal">
                         {selectedTagItems}
                     </ol>
                
                 </div>
-                <button className="btn">submit</button>
+                <div className="mt-3 mb-7 flex flex-row-reverse">
+                <button className="btn ml-3 bg-red-600">Submit</button>
+                <button type="button" className="btn bg-orange-400">Preview</button>   
+                </div>
             </form>
         </>
     )
