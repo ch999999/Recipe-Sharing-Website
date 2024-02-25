@@ -15,7 +15,6 @@ export async function checkToken(){
             }
         }
     )
-
     return authResp
 }
 
