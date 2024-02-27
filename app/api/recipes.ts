@@ -80,6 +80,7 @@ export async function POSTDescriptionImage(image){
         )
         const res = await resp.json()
         console.log(res)
+        return res
     }catch(error){
         console.log(error)
     }
@@ -100,6 +101,7 @@ export async function POSTInstructionImage(image){
         )
         const res=await resp.json()
         console.log(res)
+        return res
     }catch(error){
         console.log(error)
     }
@@ -108,14 +110,30 @@ export async function POSTInstructionImage(image){
 export async function GETRecipe(uuid){
     try{
         const token  =await getTokenFromCookie()
+        if(token){
         const resp  =await fetch(
-            process.env.BACKEND_BASE_URL+"/api/Recipe?UUID="+uuid,{
+            process.env.BACKEND_BASE_URL+"/api/Recipe/"+uuid,{
                 method: "GET",
                 headers:{
                     "Authorization": "Bearer "+token
                 }
-            }
+            }         
         )
+        const res= await resp.json()
+        return res
+        }else{
+            const resp  =await fetch(
+                process.env.BACKEND_BASE_URL+"/api/Recipe/NoAuth/"+uuid,{
+                    method: "GET",
+                    headers:{
+                        
+                    }
+                }         
+            )
+            const res= await resp.json()
+            return res
+        }
+        
     }catch(error){
         console.log(error)
     }

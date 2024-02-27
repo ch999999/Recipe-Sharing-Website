@@ -70,10 +70,10 @@ function validateDescription(description){
         }
     }
 
-    if(description.length>250){
+    if(description.length>1000){
         return{
             errorField:"description",
-            message:"Max. length of 250 characters allowed"
+            message:"Max. length of 1000 characters allowed"
         }
     }
     return null
@@ -90,10 +90,10 @@ function validateIngredients(ingredients:[{ingredient_Number: number, descriptio
             }
         }
 
-        if(ingredients[j].description.length>100){
+        if(ingredients[j].description.length>300){
             return{
                 errorField: "ingredients",
-                message: "Max. 100 characters allowed",
+                message: "Max. 300 characters allowed",
                 index: ingredients[j].ingredient_Number
             }
         }
@@ -113,10 +113,10 @@ function validateNotes(notes){
             }
         }
 
-        if(notes[j].description.length>100){
+        if(notes[j].description.length>300){
             return{
                 errorField: "notes",
-                message: "Max. 100 characters allowed",
+                message: "Max. 300 characters allowed",
                 index: notes[j].note_Number
             }
         }
@@ -135,10 +135,10 @@ function validateInstructions(instructions){
             }
         }
 
-        if(instructions[j].description.length>200){
+        if(instructions[j].description.length>300){
             return{
                 errorField: "instructions",
-                message: "Max. 200 characters allowed",
+                message: "Max. 300 characters allowed",
                 index: instructions[j].ingredient_Number
             }
         }
