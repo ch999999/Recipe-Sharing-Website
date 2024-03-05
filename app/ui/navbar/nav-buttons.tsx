@@ -18,6 +18,7 @@ export async function UserButtons(){
     if(!tokenIsValid){
     return(
     <>
+    <ul className="hidden menu menu-horizontal px-1 sm:inline"><li><Link href="/users/signup">Create Recipe</Link></li></ul>
     <ul className="menu menu-horizontal px-1"><li><Link href="/users/login">Log In</Link></li></ul>
     <ul className="menu menu-horizontal px-1"><li><Link href="/users/signup">Sign up</Link></li></ul>
     </>
@@ -25,7 +26,7 @@ export async function UserButtons(){
     }else{
         return(
         <>
-            <ul className="menu menu-horizontal px-1"><li><Link href="/recipes/new">Create Recipe</Link></li></ul>
+            <ul className="menu menu-horizontal px-1"><li><Link href="/recipes/new/mobileproportionate">Create Recipe</Link></li></ul>
             <ul className="menu menu-horizontal px-1"><li><LogoutButton/></li></ul>
         </>
         )

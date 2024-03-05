@@ -107,6 +107,28 @@ export async function POSTInstructionImage(image){
     }
 }
 
+export async function PUTRecipe(recipe){
+    try{
+        const token = await getTokenFromCookie()
+        const resp  =await fetch(
+            process.env.BACKEND_BASE_URL+"/api/Recipe/UpdateRecipe",{
+                method:"PUT",
+                headers:{
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer "+token
+                },
+                body: JSON.stringify(recipe)
+            }
+        )
+        
+        const res = await resp.json()
+        console.log(res)
+        return res
+    }catch(error){
+        console.log(error)
+    }
+}
+
 export async function GETRecipe(uuid){
     try{
         const token  =await getTokenFromCookie()
@@ -134,6 +156,89 @@ export async function GETRecipe(uuid){
             return res
         }
         
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function GETUserRecipes(){
+    try{
+        const token = await getTokenFromCookie()
+        if(token){
+            const resp  =await fetch(
+                process.env.BACKEND_BASE_URL+"/api/Recipe/User",{
+                    method: "GET",
+                    headers:{
+                        "Authorization": "Bearer "+token
+                    }
+                }         
+            )
+            const res= await resp.json()
+            return res
+        }
+}   catch(error){
+        console.log(error)
+    }
+}
+
+export async function DELETEDescriptionImage(recipeUUID){
+    try{
+        const token = await getTokenFromCookie()
+        if(token){
+            const resp = await fetch(
+                process.env.BACKEND_BASE_URL+"/api/Recipe/DescriptionImage/"+recipeUUID,{
+                    method: "DELETE",
+                    headers:{
+                        "Authorization": "Bearer "+token
+                    }
+                }
+            )
+            const res = await resp.json()
+            return res
+        }
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function POSTUploadUpdatedRecipeImage(image){
+    try{
+        const token = await getTokenFromCookie()
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/Recipe/UpdateUploadDescriptionImage",{
+                method: "POST",
+                headers:{
+                    "Content-Type": "application/json",
+                    "Authorzation": "Bearer "+token
+                },
+                body: JSON.stringify(image)
+            }
+        )
+        const res=await resp.json()
+        console.log(res)
+        return res
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function POSTUpdatedDescriptionImage(image){
+    try{
+        const token = await getTokenFromCookie()
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/Recipe/UpdateDescriptionImage",{
+                method: "POST",
+                headers:{
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer "+token
+                },
+                body: JSON.stringify(image)
+            }
+        )
+        console.log(resp)
+        const res=await resp.json()
+        console.log(res)
+        return res
     }catch(error){
         console.log(error)
     }

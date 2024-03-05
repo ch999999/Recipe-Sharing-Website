@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { signinUser } from '../api/users'
 import { putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
-import { POSTInstructionImage, getDiets } from '../api/recipes'
+import { DELETEDescriptionImage, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
 import { POSTNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
@@ -18,7 +18,7 @@ export type State = {
      index: number | null;
 }
 
-export async function userLogin(prevState: State, formData:FormData){
+export async function userLogin(formData:FormData){
     const loginCreds = {
         identifier: formData.get('identifier'),
         password: formData.get('password')
@@ -76,6 +76,12 @@ export async function createNewRecipe(prevState: State, formData: FormData){
       instructions.push({sequence_Number: instructions.length+1, description: i})
     })
 
+    const accessibility = formData.get('accessibility')
+    let isViewableByPublic = false
+    if(accessibility==="public"){
+        isViewableByPublic = true
+    }
+
     //console.log(JSON.stringify(instructions))
     let recipe = {
       title: formData.get('title'),
@@ -84,7 +90,7 @@ export async function createNewRecipe(prevState: State, formData: FormData){
       prep_Time_Mins: formData.get('prep-time'),
       cook_Time_Mins: formData.get('cook-time'),
       servings: formData.get('servings'),
-      isViewableByPublic: false,
+      isViewableByPublic: isViewableByPublic,
       cuisineId: formData.get('cuisine'),
       tags: tags,
       diets: diets,
@@ -129,7 +135,8 @@ export async function createNewRecipe(prevState: State, formData: FormData){
             recipeUUID: recipeCreationResponse.uuid,
             filetype: "image",
             imageBase64: descriptionImageBase64,
-            fileExtension: descriptionImageFileExtension
+            fileExtension: descriptionImageFileExtension,
+            filename: descriptionImage.name
         }
 
     await POSTDescriptionImage(descImageJson)
@@ -156,30 +163,178 @@ export async function createNewRecipe(prevState: State, formData: FormData){
             const instrImageJson = {
                 instructionUUID: createdInstructions[j].uuid,
                 imageBase64: instructionImageBase64,
-                fileExtension: instructionImageFileExtension
+                fileExtension: instructionImageFileExtension,
+                filename: instructionImageList[j].name
             }
             
             await POSTInstructionImage(instrImageJson)
         }
     }
 
-    // instructionImageList.forEach(async function(f){
-    //     if(f.size>0){
-    //         const imageReader = f.stream().getReader()
-    //         const instructionImageU8:number[]=[];
-    //         while(true){
-    //             const {done,value} = await imageReader.read();
-    //             if(done) break;
+    redirect('/recipes/'+recipeCreationResponse.uuid)
 
-    //             instructionImageU8.push(...value);
-    //         }
-    //         const instructionImageBase64 = base64.bytesToBase64(instructionImageU8)
-    //         console.log(instructionImageBase64)
-    //     }
-    // })
 }
 
-export async function createNewUser(prevState: State, formData: FormData){
+export async function updateRecipe(prevState: State, formData: FormData){
+    //do nothing
+
+    const ingredientList = formData.getAll('ingredient-description')
+    let ingredients=[];
+    ingredientList.forEach(function(i){
+      ingredients.push({ingredient_Number: ingredients.length+1, description: i})
+    })
+
+    const noteList = formData.getAll('notes')
+    let notes=[];
+    noteList.forEach(function(n){
+      notes.push({note_Number: notes.length+1, description: n})
+    })
+
+    const instructionList = formData.getAll('instruction-description')
+    let instructions=[];
+    instructionList.forEach(function(i){
+      instructions.push({sequence_Number: instructions.length+1, description: i, images:[]})
+    })
+
+    const accessibility = formData.get('accessibility')
+    let isViewableByPublic = false
+    if(accessibility==="public"){
+        isViewableByPublic = true
+    }
+
+    //console.log(JSON.stringify(instructions))
+    
+
+    
+    
+    //console.log(JSON.stringify(recipe))
+
+    //fileter out instruction image selection radiobutton options
+    const filteredKeys = Array.from(formData.keys()).filter(key => key.startsWith('instruction-image-option-'));
+    // Retrieve values for the filtered keys
+    const values = filteredKeys.map(key => formData.getAll(key));
+
+    const instructionUrls = formData.getAll("instruction-image-url")
+
+    const filenames = formData.getAll("instruction-image-filename")
+
+    for(let i=0; i<values.length; i++){
+        if(values[i].toString()==="existing"){
+            instructions[i].images.push({filename: filenames[i], url: instructionUrls[i], image_Number:1})
+        }
+    }
+
+    let recipe = {
+        uuid: formData.get('recipe-uuid'),
+        title: formData.get('title'),
+        description: formData.get('description'),
+        prep_Time_Mins: formData.get('prep-time'),
+        cook_Time_Mins: formData.get('cook-time'),
+        servings: formData.get('servings'),
+        isViewableByPublic: isViewableByPublic,
+        ingredients: ingredients,
+        notes: notes,
+        instructions: instructions
+      }
+
+    const recipeErrors = validateRecipe(recipe)
+    if(recipeErrors){
+        console.log(JSON.stringify(recipeErrors))
+        return recipeErrors
+      }
+  
+      console.log("All clear")
+      console.log("Recipe: "+JSON.stringify(recipe))
+
+      
+    const recipeUpdateResponse = await PUTRecipe(recipe)
+
+
+    if(!recipeUpdateResponse.uuid){ //if does not contain property, was unsuccessful
+        console.log("Recipe creation failed")
+        return
+    }
+    //Upload description image, if any
+
+    const descriptionImageOption = formData.get('description-image-option')
+    if(descriptionImageOption==="new"){
+        const descriptionImage = formData.get('description-image') as File
+        if(descriptionImage.size>0){
+            console.log("Uploading "+descriptionImage.name+"...")
+            const descriptionImageName = descriptionImage.name
+            const imageReader = descriptionImage.stream().getReader()
+            const descriptionImageU8:number[] = [];
+        while(true){
+            const {done,value} = await imageReader.read();
+            if(done) break;
+
+            descriptionImageU8.push(...value);
+        }
+        const descriptionImageBase64 = base64.bytesToBase64(descriptionImageU8)
+        const descriptionImageFileExtension = descriptionImageName.slice(descriptionImageName.lastIndexOf('.'))
+        const descImageJson = {
+            recipeUUID: recipeUpdateResponse.uuid,
+            filetype: "image",
+            imageBase64: descriptionImageBase64,
+            fileExtension: descriptionImageFileExtension,
+            filename: descriptionImage.name
+        }
+
+        await POSTUploadUpdatedRecipeImage(descImageJson)
+    }
+    }else if(descriptionImageOption==="existing"){
+        const descpImageUrl = formData.get("description-image-url")
+        const descpImageFilename = formData.get("description-image-filename")
+        const descImageJson={
+            recipeUUID: recipeUpdateResponse.uuid,
+            filetype: "image",
+            filename: descpImageFilename,
+            url: descpImageUrl
+        }
+        console.log("descImage: "+JSON.stringify(descImageJson))
+        await POSTUpdatedDescriptionImage(descImageJson)
+    }else if(descriptionImageOption==="none"){
+        const recipeUUID = recipeUpdateResponse.uuid
+        await DELETEDescriptionImage(recipeUUID)
+    }
+
+
+
+    const instructionImageList = formData.getAll('instruction-image') as File[]
+    const createdInstructions = recipeUpdateResponse.instructions
+
+    for(let j=0; j<instructionImageList.length; j++){
+        if(values[j].toString()==="new" && instructionImageList[j].size>0){
+            console.log("Uploading "+instructionImageList[j].name+"...")
+            const instructionImageName = instructionImageList[j].name
+            const imageReader = instructionImageList[j].stream().getReader()
+            const instructionImageU8:number[]=[];
+            while(true){
+                const {done,value} = await imageReader.read();
+                if(done) break;
+
+                instructionImageU8.push(...value);
+            }
+            const instructionImageBase64 = base64.bytesToBase64(instructionImageU8)
+            const instructionImageFileExtension = instructionImageName.slice(instructionImageName.lastIndexOf('.'))
+            
+            const instrImageJson = {
+                instructionUUID: createdInstructions[j].uuid,
+                imageBase64: instructionImageBase64,
+                fileExtension: instructionImageFileExtension,
+                filename: instructionImageList[j].name
+            }
+            
+            await POSTInstructionImage(instrImageJson)
+        }
+    }
+}
+
+export async function goToEditRecipe(uuid){
+    redirect('/recipes/'+uuid+'/edit')
+}
+
+export async function createNewUser(formData: FormData){
     if(formData.get('password')!==formData.get('password-confirmation')){
         return {
             errorField: "password-confirmation",

@@ -1,6 +1,13 @@
+'use client'
 import Image from "next/image";
+import { goToEditRecipe } from "@/app/lib/actions";
+
+function editRecipe(uuid){
+    goToEditRecipe(uuid)
+}
 
 export default function View({recipeData}){
+    const canEdit = recipeData.has_edit_permission
     const recipe = recipeData.recipe; 
     const recipe_media = recipeData.recipe_description_media;
     const title = recipe.title
@@ -34,8 +41,12 @@ export default function View({recipeData}){
     }
     instructions.sort(compareInstructionsBySequence)
 
-    const description_media_url = recipe_media.url
-    const description_media_description = recipe_media.description
+    let description_media_url = null;
+    let description_media_description = null;
+    if(recipe_media){
+        description_media_url = recipe_media.url
+        description_media_description = recipe_media.description
+    }
 
     const ingredientItems = ingredients.map(i=>
         <p key={i.uuid}>{i.ingredient_Number+". "}{i.description}</p>
@@ -47,6 +58,12 @@ export default function View({recipeData}){
         <p>{i.sequence_Number+". "+i.description}</p>
         {i.images.length>0 && i.images[0].url!==null && <img src={i.images[0].url} width={500} height={500} alt=""></img>}
         </div>
+        </>
+        )
+
+    const noteItems = notes.map(n=>
+        <>
+            <p key={n.uuid}>{n.note_Number+". "}{n.description}</p>
         </>
         )
 
@@ -76,6 +93,13 @@ export default function View({recipeData}){
             <p>Instructions:</p>
             {instructionItems}
             </section>
+
+            <section className = "mt-3">
+            <p>Notes:</p>
+            {noteItems}
+            </section>
+
+            {canEdit && <button className="btn" onClick={()=>editRecipe(recipe.uuid)}>Edit</button>}
             </main>
         </>
     )
