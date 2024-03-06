@@ -6,6 +6,10 @@ import { useEffect } from "react"
 import { fetchDiets } from "@/app/lib/actions"
 import { createNewRecipe } from "@/app/lib/actions"
 import ValidateImage from "@/app/lib/validators/ImageValidator"
+import { InformationCircleIcon } from "@heroicons/react/24/outline"
+//import { InformationCircleIcon } from "@heroicons/react/24/outline"
+//import { InformationCircleIcon } from "@heroicons/react/20/solid"
+//import { InformationCircleIcon } from "@heroicons/react/16/solid"
 
 const dietsSet = [
     {id: 0, name: "Vegan"},
@@ -99,6 +103,10 @@ let notesCount=0
 export default function Form({diets, cuisines, difficulties, tags}){
     const initialState = {errorField:null, message:null, index:null}
     const [state, dispatch] = useFormState(createNewRecipe, initialState)
+
+    const [showTitleTooltip, setShowTitleTooltip] = useState(false)
+    const [showDescriptionTooltip, setShowDescriptionTooltip] = useState(false)
+    const [showDescriptionImageTooltip, setShowDescriptionImageTooltip] = useState(false)
 
     const descriptionImageRef = useRef(null)
     const instructionImagesRef = useRef(null)
@@ -529,16 +537,35 @@ export default function Form({diets, cuisines, difficulties, tags}){
             <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2" action={dispatch}>{/*w-300px*/}
                 <div className="flex flex-row">
                     <label className="label mr-[7px]" htmlFor="title"><span className=" text-base font-bold">Title<span className="text-base text-red-600">*</span></span></label>
-                    <input type="text" name="title" aria-describedby="title-error" className="h-10 input w-96"/>
+                    <input type="text" name="title" aria-describedby="title-error" className="h-10 input w-96 outline outline-1 outline-gray-400"/>
+                    <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowTitleTooltip(true)} onMouseLeave={()=>setShowTitleTooltip(false)}></InformationCircleIcon>
+                        {showTitleTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showTitleTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-60 z-10 right-1 top-[40px]">The title of your recipe. Try to keep it short, yet descriptive.</p>}
+                    </div>
                 </div> 
                 {state!=null && state.errorField==="title" && <div id="title-error" aria-live="polite" aria-atomic="true"><p className="mt-2 ml-14 text-sm text-red-500">{state.message}</p></div>}
                 <div className="form-control">
+                    <div className="flex flex-row">
                     <label className="label" htmlFor="description"><span className="text-base font-bold">Description<span className="text-base text-red-600">*</span></span></label>
-                    <textarea className="p-1 w-[100%] textarea-bordered h-40" name="description" aria-describedby="description-error"/> {/*w-282px*/}
+                    <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionTooltip(true)} onMouseLeave={()=>setShowDescriptionTooltip(false)}></InformationCircleIcon>
+                        {showDescriptionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showDescriptionTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-72 translate-x-[-100px] z-[1] top-[40px]">Provide a description of the history of the recipe, the process of making the recipe, what the end result looks like, why it tastes so good, etc.</p>}
+                    </div>
+                    </div>
+                    <textarea className="p-1 w-[100%] textarea-bordered h-40 outline outline-1 outline-gray-400 rounded-md" name="description" aria-describedby="description-error"/> {/*w-282px*/}
                 </div> 
                 {state!=null && state.errorField==="description" && <div id="description-error" aria-live="polite" aria-atomic="true"><p className="mt-2 text-sm text-red-500">{state.message}</p></div>}
                 <div className="">
+                    <div className="flex flex-row">
                     <label className="label" ><span className="text-base font-bold">Description Image:</span></label>
+                    <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionImageTooltip(true)} onMouseLeave={()=>setShowDescriptionImageTooltip(false)}></InformationCircleIcon>
+                        {showDescriptionImageTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showDescriptionImageTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-60 translate-x-[-120px] z-[1] top-[40px]">The main picture of your recipe. Usually the picture of the end result of your recipe. If set, this is the first image a visitor will see on your recipe.</p>}
+                    </div>
+                    </div>
                     <div className="flex flex-row">
                     <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
                     <label htmlFor="description-image" className="relative btn"><span className="text-sm">{descriptionImage.buttonText}</span></label>
@@ -549,7 +576,7 @@ export default function Form({diets, cuisines, difficulties, tags}){
                 </div> 
 
                 <section className="flex flex-col sm:flex-row">
-                <section>
+                {/* <section>
                 <div className="mt-3 flex flex-row">
                     <label className="label mr-[47px]" htmlFor="difficulty"><span className="text-base font-bold">Difficulty<span className="text-base text-red-600">*</span></span></label>
                     <select className="select w-36" onChange={e=>setNewDifficulty(e.target.value)}>
@@ -578,7 +605,7 @@ export default function Form({diets, cuisines, difficulties, tags}){
                         {selectedDietItems}
                     </ol>
                 </div>
-                </section>
+                </section> */}
 
                 <section className=" sm:ml-auto sm:mr-0">
                 <div className="flex flex-row">

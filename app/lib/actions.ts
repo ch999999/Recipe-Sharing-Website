@@ -11,6 +11,8 @@ import { POSTNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
 import { POSTDescriptionImage } from '../api/recipes'
+import validateLogin from './validators/loginValidator'
+import validateNewUser from './validators/newUserValidator'
 
 export type State = {
     errorField?: string | null;
@@ -23,7 +25,10 @@ export async function userLogin(formData:FormData){
         identifier: formData.get('identifier'),
         password: formData.get('password')
     }
-
+    const loginValidationRes = validateLogin(loginCreds)
+    if(loginValidationRes!==null){
+        return loginValidationRes
+    }
     const loginRes  = await signinUser(loginCreds)
 
     if(loginRes.errorField){
@@ -348,7 +353,10 @@ export async function createNewUser(formData: FormData){
         lastname: formData.get('lastname'),
         password: formData.get('password')
     } 
-
+    const userValidationError = validateNewUser(user)
+    if(userValidationError){
+        return userValidationError
+    }
     const res = await createUser(user)
 
     //if response has property called errorField, that means validation error
