@@ -670,6 +670,11 @@ export default function Form({diets, cuisines, difficulties, tags}){
                     </ol>
                
                 </div>
+                <div className="flex flex-row">
+                    <label className="label mr-[7px]" htmlFor="accessibility"><span className=" text-base font-bold">Accessibility<span className="text-base text-red-600">*</span></span></label>
+                    <input type="radio" name="accessibility" id="private" value="private"/><label htmlFor="private">Private (only you can access)</label>
+                    <input defaultChecked type="radio" name="accessibility" id="public" value="public"/><label htmlFor="public">Public (anyone with link can access, but only you can modify)</label>
+                </div>
                 <div className="mt-3 mb-7 flex flex-row-reverse">
                 <button className="btn ml-3 bg-red-600">Submit</button>
                 <button type="button" className="btn bg-orange-400">Preview</button>   
