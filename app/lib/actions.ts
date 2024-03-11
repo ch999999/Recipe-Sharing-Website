@@ -51,17 +51,17 @@ export async function signoutUser(){
 
 export async function createNewRecipe(prevState: State, formData: FormData){
     
-    const tagList: FormDataEntryValue[] = formData.getAll('tags')  
-    let tags:{id: FormDataEntryValue}[]=[];
-    tagList.forEach(function(t: FormDataEntryValue){
-      tags.push({id: t})
-    })
+    // const tagList: FormDataEntryValue[] = formData.getAll('tags')  
+    // let tags:{id: FormDataEntryValue}[]=[];
+    // tagList.forEach(function(t: FormDataEntryValue){
+    //   tags.push({id: t})
+    // })
 
-    const dietList = formData.getAll('diets')
-    let diets=[];
-    dietList.forEach(function(d){
-      diets.push({id: d})
-    })
+    // const dietList = formData.getAll('diets')
+    // let diets=[];
+    // dietList.forEach(function(d){
+    //   diets.push({id: d})
+    // })
 
     const ingredientList = formData.getAll('ingredient-description')
     let ingredients=[];
@@ -91,14 +91,14 @@ export async function createNewRecipe(prevState: State, formData: FormData){
     let recipe = {
       title: formData.get('title'),
       description: formData.get('description'),
-      difficultyId: formData.get('difficulty'),
+      difficultyId: 1,
       prep_Time_Mins: formData.get('prep-time'),
       cook_Time_Mins: formData.get('cook-time'),
       servings: formData.get('servings'),
       isViewableByPublic: isViewableByPublic,
-      cuisineId: formData.get('cuisine'),
-      tags: tags,
-      diets: diets,
+      cuisineId: 1,
+    //   tags: tags,
+    //   diets: diets,
       ingredients: ingredients,
       notes: notes,
       instructions: instructions
@@ -143,7 +143,7 @@ export async function createNewRecipe(prevState: State, formData: FormData){
             fileExtension: descriptionImageFileExtension,
             filename: descriptionImage.name
         }
-
+    
     await POSTDescriptionImage(descImageJson)
     }
 
@@ -151,6 +151,7 @@ export async function createNewRecipe(prevState: State, formData: FormData){
     const createdInstructions = recipeCreationResponse.instructions
 
     for(let j=0; j<instructionImageList.length; j++){
+        //console.log("Instruction image "+j+" "+instructionImageList[j].name)
         if(instructionImageList[j].size>0){
             console.log("Uploading "+instructionImageList[j].name+"...")
             const instructionImageName = instructionImageList[j].name
