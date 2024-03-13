@@ -447,7 +447,7 @@ export default function RecipeEditPage({recipeData}){
 
     return(
         <>
-            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2" action={dispatch}>
+            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={dispatch}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
                 <div>
                     <ol>

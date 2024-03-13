@@ -2,27 +2,12 @@
 import { useFormState } from "react-dom"
 import { useState } from "react"
 import { useRef } from "react"
-import { useEffect } from "react"
-import { fetchDiets } from "@/app/lib/actions"
 import { createNewRecipe } from "@/app/lib/actions"
 import ValidateImage from "@/app/lib/validators/ImageValidator"
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
-
+import { useEffect } from "react"
 import {ArrowUpIcon} from "@heroicons/react/24/outline"
 import {ArrowDownIcon} from "@heroicons/react/24/outline"
-
-
-const dietsSet = [
-    {id: 0, name: "Vegan"},
-    {id: 1, name: "Carnivore"},
-    {id: 2, name: "Keto"}
-]
-
-const difficultiesSet = [
-    {id: 0, name: "Easy"},
-    {id: 1, name: "Medium"},
-    {id: 2, name: "Hard"}
-]
 
 const units = [
      {id: 0, name: "Pieces(pcs)"},
@@ -41,67 +26,16 @@ const units = [
      {id: 13, name: "Gallon"}
 ]
 
-const tagsSet = [
-    {id: 0, name: "Chicken"},
-    {id: 1, name: "Rice"},
-    {id: 2, name: "Sugar"}
-]
-
-const cuisinesSet = [
-    {id:0, name: "European"},
-    {id:1, name:"Asian"},
-    {id:2, name:"Chinese"},
-    {id:3, name:"African"},
-    {id:4, name:"Western"}
-]
-
-function test(evt){
-    evt.preventDefault();
-    // let diets = evt.target['diets']
-    // if(!diets.length){
-    //     console.log(diets.value)
-    // }
-    // for(let i=0; i<diets.length; i++){
-    //     console.log(diets[i].value)
-    // }
-
-    // let ingredientDescriptions = evt.target['ingredient-description']
-    // let ingredientQuantities = evt.target['ingredient-quantity']
-    // let ingredientUnits = evt.target['ingredient-units']
-
-    // if(!ingredientDescriptions.length){
-    //     console.log("Description: "+ ingredientDescriptions.value+", Quantity: "+ingredientQuantities.value+", Units: "+ingredientUnits.value)
-    // }else{
-    // for(let i=0; i<ingredientDescriptions.length; i++){
-    //     console.log("Description: "+ ingredientDescriptions[i].value+", Quantity: "+ingredientQuantities[i].value+", Units: "+ingredientUnits[i].value)
-    // }
-    // }
 
 
-    // let instructionDescriptions = evt.target['instruction-description']
-    // if(!instructionDescriptions.length){
-    //     console.log("Description: "+instructionDescriptions.value)
-    // }else{
-    //     for(let i=0; i<instructionDescriptions.length; i++){
-    //         console.log("Description "+ instructionDescriptions[i].value)
-    //     }
-    // }
-
-    let notes = evt.target['notes']
-    if(!notes.length){
-        console.log(notes.value)
-    }else{
-        for(let i=0; i<notes.length; i++){
-            console.log(notes[i].value)
-        }
-    }
-}
 
 let ingredientCount=0
 let instructionCount=0
 let notesCount=0
 
-export default function Form({diets, cuisines, difficulties, tags}){
+export default function Form(){
+    
+    
     const initialState = {errorField:null, message:null, index:null}
     const [state, dispatch] = useFormState(createNewRecipe, initialState)
 
@@ -120,33 +54,10 @@ export default function Form({diets, cuisines, difficulties, tags}){
     const instructionImagesRef = useRef(null)
 
     const [descriptionImageError, setDescriptionImageError] = useState("")
-    const [dietToAdd, setDietToAdd] = useState(diets[0].diet_Name)
-    const [selectedDiets, setSelectedDiets] = useState([])
-    //const [ingredientToUpate, setIngredientToUpdate] = useState(0)
     const [ingredients, setIngredients] = useState([{id: 0, description: "", quantity:0, unit:units[0].name, order:1}])
     const [instructions, setInstructions] = useState([{id: 0, description: "", order:1, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image", imageErrorText: ""}])
-    const [selectedTags, setSelectedTags] = useState([])
-    const [tagToAdd, setTagToAdd] = useState(tags[0].tag_Name)
     const [notes, setNotes] = useState([])
     const [descriptionImage, setDescriptionImage] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
-    const [selectedCuisine, setSelectedCuisine] = useState(1)
-    const [selectedDifficulty, setSelectedDifficulty] = useState(1)
-
-    const cusineItems = cuisines.map(c=>
-        <option key={c.id} value={c.cuisine_Name}>{c.cuisine_Name}</option>
-        )
-
-    const tagItems = tags.map(t=>
-        <option key={t.id}>{t.tag_Name}</option>
-        )
-
-    const unitItems = units.map(u=>
-        <option key={u.id}>{u.name}</option>
-        )
-
-    const difficultyItems = difficulties.map(d=>
-        <option key={d.id} value={d.difficulty_Name}>{d.difficulty_Name}</option>
-        )
 
     const instructionItems = instructions.map(i=>
         {if(i.order===1&&instructions.length===1){
@@ -154,7 +65,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
                 <tr className=" border border-gray-300">
                     <td className="border border-gray-300 w-5"><p className=" text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                     <td className="border border-gray-300 md:[w-120%]">
-                        <p className="md:hidden">Instruction:</p>
                         <textarea aria-describedby={"instruction-error"+i.id} className="w-[100%] p-1 rounded h-20 outline outline-1 outline-gray-400 md:resize-y" name="instruction-description" placeholder={"Instruction No. "+i.order}></textarea>     {/*w-264px */}
                         {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
                         <div className="flex flex-row md:mb-1">
@@ -233,17 +143,8 @@ export default function Form({diets, cuisines, difficulties, tags}){
         }
         )
 
-    // const noteItems = notes.map(n=>
-    //     <li className="mt-3" key={n.id}><textarea className="ml-2 mr-2 text-sm textarea-bordered p-1 w-[260px] h-20" name="notes"></textarea><div className="flex flex-row-reverse"><button type="button" onClick={()=>removeNote(n.id)} className=" btn-ghost mr-1 text-sm text-red-700">Remove</button></div></li>
-    //     )
 
-    const noteItems = notes.map(n=>
-        // {if(n.id===0){
-        //     return(
-        //         null
-        //     )
-        // }else{
-            
+    const noteItems = notes.map(n=>          
                 <tbody className="border border-gray-300" key={n.id}><tr className="border border-gray-300">
                     <td className="border border-gray-300 w-5"><p className="text-center">{n.order}</p></td>
                     <td className="border border-gray-300">
@@ -265,9 +166,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
                     </div>
                     </td>
                 </tr></tbody>
-        //    )
-       // }
-       // }
         )
 
     const ingredientItems = ingredients.map(i=>
@@ -276,7 +174,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
             return  ( <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
                         <td className="border border-gray-300 min-w-5"><p className=" text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                         <td className=" border border-gray-300 md:w-[120%]">
-                            {/* <p className="md:hidden">Ingredient:</p> */}
                             <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 resize-none outline outline-1 outline-gray-400 rounded md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order}></textarea>{/*w-264px */}
                             {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
                             <div className="flex flex-row float-right md:hidden">
@@ -285,39 +182,20 @@ export default function Form({diets, cuisines, difficulties, tags}){
                                 <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                             </div>
-
-                            {/* <div className="md:hidden"><span className="mr-[50px]">Quantity:</span><input className="input w-36 h-10" type="number" onChange={e=>updateQuantity(i.id, e)} value={i.quantity}></input></div>
-                            <input hidden onChange={()=>{}} name="ingredient-quantity" value={i.quantity}></input>
-                            <div className="mt-2 md:hidden"><span className="mr-[75px]"> Units:</span><select onChange={e=>updateUnits(i.id, e)} className="select w-36" value={i.unit}>{unitItems}</select></div>
-                            <input hidden onChange={()=>{}} name="ingredient-unit" value={i.unit}></input>
-                            <div className="flex flex-row-reverse mt-2 mb-1 mr-2 md:hidden"><button className=" btn" type="button" disabled>Remove</button></div> */}
                         </td>
-                        {/* <td className="hidden border border-gray-300 md:table-cell"><input className="input w-[172px] md:w-[120px]" type="number" onChange={e=>updateQuantity(i.id, e)} value={i.quantity}></input></td>
-                        <td className=" hidden border-gray-300 md:table-cell">
-                            <select onChange={e=>updateUnits(i.id, e)} className="select" value={i.unit}>
-                                {unitItems}
-                            </select>
-                        </td> */}    {/*hidden(below)*/}
                         <td className="hidden border border-gray-300 md:table-cell">
-                            
-                                {/* <button className="btn-sm"><PlusIcon></PlusIcon></button> */}
-                                {/* <button className="btn-sm" type="button" disabled><XMarkIcon></XMarkIcon></button> */}
-                                {/* <button className="btn-sm"><ArrowUpIcon></ArrowUpIcon></button>
-                                <button className="btn-sm"><ArrowDownIcon></ArrowDownIcon></button> */}
                             <div className="flex flex-row items-center">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
                                 <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                            </div>
-                        
+                            </div> 
                         </td>
                     </tr></tbody>)
         }else{
             return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
                         <td className="border border-gray-300 min-w-5"><p className="md:w-5 text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                         <td className=" border border-gray-300 md:w-[120%]">
-                            {/* <p className="md:hidden">Ingredient:</p> */}
                             <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none outline outline-1 outline-gray-400 md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order}></textarea>
                             {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
                             <div className="flex flex-row float-right md:hidden">
@@ -326,18 +204,7 @@ export default function Form({diets, cuisines, difficulties, tags}){
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                             </div>
-                            {/* <div className="md:hidden"><span className="mr-[50px]">Quantity:</span><input className="input w-36 h-10" type="number" onChange={e=>updateQuantity(i.id, e)} value={i.quantity}></input></div>
-                            <input hidden onChange={()=>{}} name="ingredient-quantity" value={i.quantity} ></input>
-                            <div className="mt-2 md:hidden"><span className="mr-[75px]"> Units:</span><select onChange={e=>updateUnits(i.id, e)} className="select w-36" value={i.unit}>{unitItems}</select></div>
-                            <input hidden onChange={()=>{}} name="ingredient-unit" value={i.unit}></input>
-                            <div className="flex flex-row-reverse mt-2 mb-1 mr-2 md:hidden"><button className="btn" type="button" onClick={()=>{removeIngredient(i.id)}}>remove</button></div> */}
                         </td>
-                        {/* <td className=" hidden border border-gray-300 md:table-cell"><input className="input w-[172px] md:w-[120px]" type="number" onChange={e=>updateQuantity(i.id, e)} value={i.quantity}></input></td>
-                        <td className="hidden border border-gray-300 md:table-cell">
-                        <select onChange={e=>updateUnits(i.id, e)} className="select" value={i.unit}>
-                                {unitItems}
-                        </select>
-                        </td> */}  {/*hidden(below)*/}
                         <td className="hidden border border-gray-300 md:table-cell">
                         <div className="flex flex-row items-center">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
@@ -350,25 +217,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
         }}
         )
 
-    const dietItems = diets.map(d =>
-        <option key={d.id}>{d.diet_Name}</option>
-      );
-
-    const selectedDietItems = selectedDiets.map(diet=>
-
-        <li className="mt-3" key={diet.id}><input disabled className="" value={diet.name}></input><input className="hidden" name="diets" value={diet.id}></input><button type="button" onClick={()=>removeDiet(diet.id)} className="btn -ml-3">remove</button></li>
-
-        )
-    //  const inputs = selectedDiets.map(diet=>
-    //     <input key={diet.id} name="diets">{diet.name}</input>
-    //     )
-
-    const selectedTagItems = selectedTags.map(t=>
-        <li className="mt-2" key={t.id}><input disabled value={t.name}></input><input className="hidden" name="tags" value={t.id}></input> <button type="button" onClick={()=>removeTag(t.id)} className="btn -ml-5">remove</button></li>
-        )
-
-
-
     function ValidateDescriptionImage(file){
         const error = ValidateImage(file)
         if(error){
@@ -379,40 +227,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
             setDescriptionImageError("")
         }
 
-    }
-
-    function updateQuantity(id, e){
-        const nextIngredients = ingredients.map(i=>{
-            if(i.id===id){
-                return {
-                    ...i,
-                    quantity: e.target.value
-                }
-            }else{
-                return i
-            }
-        })
-        setIngredients(nextIngredients)
-    }
-
-    function updateUnits(id, e){
-        const nextIngredients = ingredients.map(i=>{
-            if(i.id===id){
-                return{ ...i,
-                unit: e.target.value}
-            }else{
-                return i
-            }
-        })
-        setIngredients(nextIngredients)
-    }
-
-    function countNodes(){
-        const map = getMap()
-        instructions.forEach(function(i){
-            const node=map.get(i.id)
-            console.log(node)
-        })
     }
 
     function getMap(){
@@ -509,14 +323,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
                 nextNotes[j].order = j+1
             }
         setNotes(nextNotes)
-    }
-
-    function removeTag(id){
-        setSelectedTags(
-            selectedTags.filter(t=>
-                t.id!==id
-                )
-        )
     }
 
     function addIngredient(){
@@ -631,38 +437,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
         setNotes(nextNotes)
     }
 
-    function addTag(){
-        const tagExists = selectedTags.find(({name})=>name===tagToAdd);
-        if(tagExists){
-            return;
-        }
-        const tag = tags.find(({tag_Name})=>tag_Name===tagToAdd);
-        setSelectedTags([
-            ...selectedTags,
-            {id: tag.id, name: tagToAdd}
-        ]);
-    }
-
-    function addDiet(){
-        //setSelectedDiets([...selectedDiets,{id:9, name: selectedDiet}]);
-        const dietExists = selectedDiets.find(({ name }) => name === dietToAdd);
-        if(dietExists){
-            return;
-        }
-        const diet = diets.find(({diet_Name})=>diet_Name===dietToAdd);
-        setSelectedDiets([
-            ...selectedDiets,
-            { id: diet.id, name: dietToAdd }
-          ]);
-    }
-
-    function removeDiet(id){
-        setSelectedDiets(
-            selectedDiets.filter(diet =>
-              diet.id !== id
-            ))
-    }
-
     function addInstruction(){
         instructionCount++;
         setInstructions([
@@ -720,29 +494,15 @@ export default function Form({diets, cuisines, difficulties, tags}){
 
 
     function removeInstruction(id){
-        // const map = getMap();
-        // const node = map.get(id);
-        // node.files = null;
         const copy = [...instructions]
         const afterRemovedInstruction = copy.filter(i=>
             i.id!=id
             )
-
             //reorder based on array index
             for(let j=0; j<afterRemovedInstruction.length; j++){
                 afterRemovedInstruction[j].order = j+1
             }
         setInstructions(afterRemovedInstruction)
-    }
-
-    function setNewCuisine(cuisine){
-        const newCuisine = cuisines.find(({cuisine_Name})=>cuisine_Name===cuisine)
-        setSelectedCuisine(newCuisine.id)
-    }
-
-    function setNewDifficulty(diff){
-        const newDiff = difficulties.find(({difficulty_Name})=>difficulty_Name===diff)
-        setSelectedDifficulty(newDiff.id)
     }
 
     return(
@@ -789,36 +549,6 @@ export default function Form({diets, cuisines, difficulties, tags}){
                 </div>
 
                 <section className="flex flex-col sm:flex-row">
-                {/* <section>
-                <div className="mt-3 flex flex-row">
-                    <label className="label mr-[47px]" htmlFor="difficulty"><span className="text-base font-bold">Difficulty<span className="text-base text-red-600">*</span></span></label>
-                    <select className="select w-36" onChange={e=>setNewDifficulty(e.target.value)}>
-                        {difficultyItems}
-                    </select>
-                    <input className="hidden" name="difficulty" defaultValue={selectedDifficulty}></input>
-                </div>
-                <div className="mt-3 flex flex-row">
-                    <label className="label mr-[70px]" htmlFor="cuisine"><span className="text-base font-bold">Cuisine</span></label>
-                    <select className="select w-36" onChange={e=>{setNewCuisine(e.target.value)}}>
-                        {cusineItems}
-                    </select>
-                    <input className="hidden" name="cuisine" defaultValue={selectedCuisine}></input>
-                </div>
-                <div className="p-1 border rounded-md border-gray-300 w-[285px] mt-3 flex flex-col">
-                    <div className="flex flex-row">
-                    <label className="label mr-2" htmlFor="dietsSelect"><span className="text-base font-bold">Diets</span></label>
-                    <select className="select" name="dietsSelect" onChange={e=>{setDietToAdd(e.target.value)}}>
-                        {dietItems}
-                    </select>
-
-                    <button type="button" className="ml-3 btn" onClick={addDiet}>Add diet</button>
-                    </div>
-                    {selectedDiets.length===0 && <p className="mt-2 ml-2 italic">No diets selected</p>}
-                    <ol type="1" className="list-inside list-decimal">
-                        {selectedDietItems}
-                    </ol>
-                </div>
-                </section> */}
 
                 <section className="lg:flex lg:flex-row lg:content-between">
                 <div className="flex flex-row">
@@ -860,28 +590,23 @@ export default function Form({diets, cuisines, difficulties, tags}){
                         <tr className="border border-gray-300">
                             <th className="hidden border border-gray-300 md:table-cell"></th>
                             <th className="hidden border border-gray-300 md:table-cell"><span className="text-base font-bold">Ingredient</span></th>
-                            {/* <th className="hidden border border-gray-300 md:table-cell">Quantity</th>
-                            <th className="hidden border border-gray-300 md:table-cell">Units</th> */}
                             <th className="hidden border border-gray-300 md:table-cell">
                                 <div className="flex flex-row ml-[25%]">
                                 <div>Actions</div>
                                 <div className="relative">
                     <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowIngredientActionsTooltip(true)} onMouseLeave={()=>setShowIngredientActionsTooltip(false)}></InformationCircleIcon>
                     {showIngredientActionsTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
-                    {showIngredientActionsTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-4 z-[1] top-[40px]"><span>
-                        
+                    {showIngredientActionsTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-4 z-[1] top-[40px]"><span>       
                         + Icon: Adds ingredient below<br></br>
                         x Icon: Removes the ingredient<br></br>
                         &uarr; Icon: Shifts ingredient up<br></br>
                         &darr; Icon: Shifts ingredient down</span></p>}
                     </div>
                     </div>
-                            </th>
+                    </th>
                         </tr>
                         </thead>
-
                         {ingredientItems}
-
                     </table>
                 </div>
 
@@ -950,25 +675,8 @@ export default function Form({diets, cuisines, difficulties, tags}){
                         </thead>
                         {noteItems}
                     </table>
-                    {/* {notes.length===0&&<p className="mt-2 ml-2 italic">No notes added</p>}
-                    <ol type="1" className="list-inside list-decimal">
-                        {noteItems}
-                    </ol> */}
                 </div>
-                {/* <div className="p-1 border rounded-md border-gray-200 mt-3 flex flex-col">
-                    <div className="flex flex-row">
-                    <label className="label mr-2" htmlFor="tagsSelect"><span className="text-basse font-bold">Tags</span></label>
-                    <select className="select w-36 bg-slate-300" name="tagsSelect" onChange={e=>{setTagToAdd(e.target.value)}}>
-                        {tagItems}
-                    </select>
-                    <button type="button" className="ml-3 btn" onClick={addTag}>Add tag</button>
-                    </div>
-                    {selectedTags.length===0&&<p className="mt-2 ml-2 italic">No tags selected</p>}
-                    <ol type="1" className="list-inside list-decimal">
-                        {selectedTagItems}
-                    </ol>
-
-                </div> */}
+                
                 <div className="flex flex-row">
                     <label className="label mr-[7px]" htmlFor="accessibility"><span className=" text-base font-bold">Accessibility<span className="text-base text-red-600">*</span></span></label>
                     <div className="flex flex-col mt-6">
