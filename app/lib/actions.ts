@@ -1,16 +1,18 @@
 'use server'
 
-import { createUser } from '../api/users'
+import { createUser, signUserOut } from '../api/users'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { signinUser } from '../api/users'
-import { putTokenIntoCookie } from './auth'
+import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
 import { DELETEDescriptionImage, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
 import { POSTNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
 import { POSTDescriptionImage } from '../api/recipes'
+import validateLogin from './validators/loginValidator'
+import validateNewUser from './validators/newUserValidator'
 
 export type State = {
     errorField?: string | null;
@@ -23,7 +25,10 @@ export async function userLogin(formData:FormData){
         identifier: formData.get('identifier'),
         password: formData.get('password')
     }
-
+    const loginValidationRes = validateLogin(loginCreds)
+    if(loginValidationRes!==null){
+        return loginValidationRes
+    }
     const loginRes  = await signinUser(loginCreds)
 
     if(loginRes.errorField){
@@ -32,31 +37,38 @@ export async function userLogin(formData:FormData){
             message: loginRes.message       
         }
     }else{
-        putTokenIntoCookie(loginRes.token)
+        putTokenIntoCookie(loginRes.accessToken)
+        putRefreshTokenIntoCookie(loginRes.refreshToken)
         revalidatePath('/')
         redirect('/')
     }
 }
 
 export async function signoutUser(){
+    try{
+        await signUserOut()
+    }catch{
+
+    }
     deleteTokenFromCookie()
+    deleteRefreshTokenFromCookie()
     revalidatePath('/')
     redirect('/')
 }
 
 export async function createNewRecipe(prevState: State, formData: FormData){
     
-    const tagList: FormDataEntryValue[] = formData.getAll('tags')  
-    let tags:{id: FormDataEntryValue}[]=[];
-    tagList.forEach(function(t: FormDataEntryValue){
-      tags.push({id: t})
-    })
+    // const tagList: FormDataEntryValue[] = formData.getAll('tags')  
+    // let tags:{id: FormDataEntryValue}[]=[];
+    // tagList.forEach(function(t: FormDataEntryValue){
+    //   tags.push({id: t})
+    // })
 
-    const dietList = formData.getAll('diets')
-    let diets=[];
-    dietList.forEach(function(d){
-      diets.push({id: d})
-    })
+    // const dietList = formData.getAll('diets')
+    // let diets=[];
+    // dietList.forEach(function(d){
+    //   diets.push({id: d})
+    // })
 
     const ingredientList = formData.getAll('ingredient-description')
     let ingredients=[];
@@ -86,14 +98,14 @@ export async function createNewRecipe(prevState: State, formData: FormData){
     let recipe = {
       title: formData.get('title'),
       description: formData.get('description'),
-      difficultyId: formData.get('difficulty'),
+      difficultyId: 1,
       prep_Time_Mins: formData.get('prep-time'),
       cook_Time_Mins: formData.get('cook-time'),
       servings: formData.get('servings'),
       isViewableByPublic: isViewableByPublic,
-      cuisineId: formData.get('cuisine'),
-      tags: tags,
-      diets: diets,
+      cuisineId: 1,
+    //   tags: tags,
+    //   diets: diets,
       ingredients: ingredients,
       notes: notes,
       instructions: instructions
@@ -138,7 +150,7 @@ export async function createNewRecipe(prevState: State, formData: FormData){
             fileExtension: descriptionImageFileExtension,
             filename: descriptionImage.name
         }
-
+    
     await POSTDescriptionImage(descImageJson)
     }
 
@@ -146,6 +158,7 @@ export async function createNewRecipe(prevState: State, formData: FormData){
     const createdInstructions = recipeCreationResponse.instructions
 
     for(let j=0; j<instructionImageList.length; j++){
+        //console.log("Instruction image "+j+" "+instructionImageList[j].name)
         if(instructionImageList[j].size>0){
             console.log("Uploading "+instructionImageList[j].name+"...")
             const instructionImageName = instructionImageList[j].name
@@ -201,13 +214,6 @@ export async function updateRecipe(prevState: State, formData: FormData){
     if(accessibility==="public"){
         isViewableByPublic = true
     }
-
-    //console.log(JSON.stringify(instructions))
-    
-
-    
-    
-    //console.log(JSON.stringify(recipe))
 
     //fileter out instruction image selection radiobutton options
     const filteredKeys = Array.from(formData.keys()).filter(key => key.startsWith('instruction-image-option-'));
@@ -327,7 +333,10 @@ export async function updateRecipe(prevState: State, formData: FormData){
             
             await POSTInstructionImage(instrImageJson)
         }
+
     }
+    revalidatePath('/recipes/'+recipe.uuid)
+    redirect('/recipes/'+recipe.uuid)
 }
 
 export async function goToEditRecipe(uuid){
@@ -348,7 +357,10 @@ export async function createNewUser(formData: FormData){
         lastname: formData.get('lastname'),
         password: formData.get('password')
     } 
-
+    const userValidationError = validateNewUser(user)
+    if(userValidationError){
+        return userValidationError
+    }
     const res = await createUser(user)
 
     //if response has property called errorField, that means validation error

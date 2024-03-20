@@ -3,11 +3,16 @@ import { useFormState } from "react-dom"
 import { useRef } from "react"
 import { useState } from "react"
 import { updateRecipe } from "@/app/lib/actions"
-import ValidateImage from "@/app/lib/validators/ImageValidator"
+import { InformationCircleIcon } from "@heroicons/react/24/outline"
+import ValidateImage from "@/app/lib/validators/ImageValidator";
+import {ArrowUpIcon} from "@heroicons/react/24/outline"
+import {ArrowDownIcon} from "@heroicons/react/24/outline"
+
 let ingredientCount=0
 let instructionCount=0
 let notesCount=0
 let imagesCount=0
+
 
 function ValidateDescriptionImage(file){
     
@@ -19,6 +24,18 @@ export default function RecipeEditPage({recipeData}){
 
     let initialInstructionImageSettings = []
     let initialInstructionImages = []
+
+    const [showTitleTooltip, setShowTitleTooltip] = useState(false)
+    const [showDescriptionTooltip, setShowDescriptionTooltip] = useState(false)
+    const [showDescriptionImageTooltip, setShowDescriptionImageTooltip] = useState(false)
+    const [showIngredientTooltip, setShowIngredientTooltip] = useState(false)
+    const [showIngredientActionsTooltip,setShowIngredientActionsTooltip] = useState(false)
+    const [showInstructionTooltip, setShowInstructionTooltip] = useState(false)
+    const [showInstructionActionsTooltip,setShowInstructionActionsTooltip] = useState(false)
+    const [showNotesTooltip, setShowNotesTooltip] = useState(false)
+    const [showPrivateTooltip, setShowPrivateTooltip] = useState(false)
+    const [showPublicTooltip, setShowPublicTooltip] = useState(false)
+    const [showEnlargedDescriptionImage, setShowEnlargedDescriptionImage] = useState(false);
     
     const oriRecipe = recipeData.recipe
     const oriDescriptionMedia = recipeData.recipe_description_media
@@ -50,11 +67,11 @@ export default function RecipeEditPage({recipeData}){
         if(instruction.images.length>0){
             initialInstructionImageSettings.push("existing")       
             initialInstructionImages.push({filename:instruction.images[0].filename, url:instruction.images[0].url})
-            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:instruction.images[0].filename, fileChosen: true, imageButtonText: "Repick Image", imageErrorText: ""})
+            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Repick Image", imageErrorText: ""})
             instructionCount++
         }else{
             initialInstructionImageSettings.push("none")
-            initialInstructionImages.push({filename:"", url:""})
+            initialInstructionImages.push({filename:"", url:"nil"})
             oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image", imageErrorText: ""})
             instructionCount++
         }
@@ -136,6 +153,7 @@ export default function RecipeEditPage({recipeData}){
 
     function resetInstructions(){
         setInstructions(oriInstructionsList)
+
     }
 
     function addInstruction(){
@@ -190,13 +208,56 @@ export default function RecipeEditPage({recipeData}){
         notesCount++;
     }
 
+    function addNoteBelow(Id){
+        const indexToAddBelow = notes.findIndex(({id})=>id===Id)
+        notesCount++
+        const nextNotes = [...notes.slice(0, indexToAddBelow+1),
+        {id:notesCount, description:"", order:0},
+        ...notes.slice(indexToAddBelow+1)]
+
+        for(let j=0; j<nextNotes.length; j++){
+            nextNotes[j].order = j+1
+        }
+        setNotes(nextNotes)
+    }
+
+    function moveNoteDown(Id){
+        const noteToMoveDown = notes.find(({id})=>id===Id)
+        if(noteToMoveDown.order>=notes.length){
+            return
+        }
+        const noteBelow = notes.find(({order})=>order===noteToMoveDown.order+1)
+        const nextNotes = [...notes]
+        nextNotes[noteToMoveDown.order-1] = noteBelow
+        nextNotes[noteBelow.order-1] = noteToMoveDown
+        for(let j=0; j<nextNotes.length; j++){
+            nextNotes[j].order = j+1
+        }
+        setNotes(nextNotes)
+    }
+
+    function moveNoteUp(Id){
+        const noteToMoveUp = notes.find(({id})=>id===Id)
+        if(noteToMoveUp.order<=1){
+            return
+        }
+        const noteAbove = notes.find(({order})=>order===noteToMoveUp.order-1)
+        const nextNotes = [...notes]
+        nextNotes[noteToMoveUp.order-1] = noteAbove
+        nextNotes[noteAbove.order-1] = noteToMoveUp
+        for(let j=0; j<nextNotes.length; j++){
+            nextNotes[j].order = j+1
+        }
+        setNotes(nextNotes)
+    }
+
     function removeNote(id){
         const copy = [...notes]
         const nextNotes = copy.filter(i=>
             i.id!=id
             )
             //reorder based on array index
-            for(let j=0; j<notes.length-1; j++){
+            for(let j=0; j<nextNotes.length; j++){
                 nextNotes[j].order = j+1
             }
         setNotes(nextNotes)
@@ -206,8 +267,25 @@ export default function RecipeEditPage({recipeData}){
         const urlMap = getUrlMap();
         const node = urlMap.get(id);
         node.value = oriImageList[imageIndex].url
+
+        const instrImageMiniMap = getInstrImageMiniMap();
+        const miniImageNode = instrImageMiniMap.get(id);
+        miniImageNode.src = oriImageList[imageIndex].url
         console.log("node: "+node)
         console.log("node value "+node.value)
+    }
+
+    function showPopupImage(id){
+        console.log("hi")
+        const map = getInstrImagePopupMap()
+        const node = map.get(id)
+        node.style.display = "inline"
+    }
+
+    function hidePopupImage(id){
+        const map = getInstrImagePopupMap()
+        const node = map.get(id)
+        node.style.display = "none"
     }
 
     function updateInstructionImage(id){
@@ -249,6 +327,99 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
+    function addIngredientBelow(Id){
+        const indexToAddBelow = ingredients.findIndex(({id})=>id===Id)
+        ingredientCount++
+        const nextIngredients = [...ingredients.slice(0, indexToAddBelow+1),
+        {id:ingredientCount, description:"", order:0},
+        ...ingredients.slice(indexToAddBelow+1)]
+
+        for(let j=0; j<nextIngredients.length; j++){
+            nextIngredients[j].order = j+1
+        }
+
+        setIngredients(nextIngredients)
+
+    }
+
+    function moveIngredientUp(Id){
+        const ingredientToMoveUp = ingredients.find(({id})=>id===Id)
+        if(ingredientToMoveUp.order<=1){
+            return
+        }
+        const ingredientAbove = ingredients.find(({order})=>order===ingredientToMoveUp.order-1)
+        const nextIngredients = [...ingredients]
+        nextIngredients[ingredientToMoveUp.order-1] = ingredientAbove
+        nextIngredients[ingredientAbove.order-1] = ingredientToMoveUp
+        //reorder based on array index
+        for(let j=0; j<nextIngredients.length; j++){
+            nextIngredients[j].order = j+1
+        }
+        setIngredients(nextIngredients)
+    }
+
+    function moveIngredientDown(Id){
+        const ingredientToMoveDown = ingredients.find(({id})=>id===Id)
+        if(ingredientToMoveDown.order>=ingredients.length){
+            return
+        }
+        const ingredientBelow = ingredients.find(({order})=>order===ingredientToMoveDown.order+1)
+        const nextIngredients = [...ingredients]
+        nextIngredients[ingredientToMoveDown.order-1] = ingredientBelow
+        nextIngredients[ingredientBelow.order-1] = ingredientToMoveDown
+        //reorder based on array index
+        for(let j=0; j<nextIngredients.length; j++){
+            nextIngredients[j].order = j+1
+        }
+        setIngredients(nextIngredients)
+    }
+
+    function addInstructionBelow(Id){
+        const indexToAddBelow = instructions.findIndex(({id})=>id===Id)
+        instructionCount++
+        const nextInstructions = [...instructions.slice(0, indexToAddBelow+1),
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false},
+        ...instructions.slice(indexToAddBelow+1)]
+
+        for(let j=0; j<nextInstructions.length; j++){
+            nextInstructions[j].order = j+1
+        }
+
+        setInstructions(nextInstructions)
+    }
+
+    function moveInstructionUp(Id){
+        const instructionToMoveUp = instructions.find(({id})=>id===Id)
+        if(instructionToMoveUp.order<=1){
+            return
+        }
+        const instructionAbove = instructions.find(({order})=>order===instructionToMoveUp.order-1)
+        const nextInstructions = [...instructions]
+        nextInstructions[instructionToMoveUp.order-1] = instructionAbove
+        nextInstructions[instructionAbove.order-1] = instructionToMoveUp
+        //reorder based on array index
+        for(let j=0; j<nextInstructions.length; j++){
+            nextInstructions[j].order = j+1
+        }
+        setInstructions(nextInstructions)
+    }
+
+    function moveInstructionDown(Id){
+        const instructionToMoveDown = instructions.find(({id})=>id===Id)
+        if(instructionToMoveDown.order>=instructions.length){
+            return
+        }
+        const instructionBelow = instructions.find(({order})=>order===instructionToMoveDown.order+1)
+        const nextInstructions = [...instructions]
+        nextInstructions[instructionToMoveDown.order-1] = instructionBelow
+        nextInstructions[instructionBelow.order-1] = instructionToMoveDown
+        //reorder based on array index
+        for(let j=0; j<nextInstructions.length; j++){
+            nextInstructions[j].order = j+1
+        }
+        setInstructions(nextInstructions)
+    }
+
     const initialState = {errorField:null, message:null, index:null}
     const [state,dispatch] = useFormState(updateRecipe, initialState)
 
@@ -257,6 +428,9 @@ export default function RecipeEditPage({recipeData}){
     const descriptionImageRef = useRef(null)
     const instructionImagesRef = useRef(null)
     const instructionUrlsRef = useRef(null)
+    const instructionImagesMiniRef = useRef(null)
+    const instructionImagesPopupRef = useRef(null)
+    
 
     const [title, setTitle] = useState(oriTitle)
     const [description, setDescription] = useState(oriDescription)
@@ -277,108 +451,161 @@ export default function RecipeEditPage({recipeData}){
     )
 
     const imageSelectItems = images.map(i=>
-        <option className=" flex flex-row" key={i.id} value={i.filename}>{i.filename+": "}</option>
+        <option className=" flex flex-row" key={i.id} value={i.filename}>{i.filename}</option>
         )
 
     const instructionItems = instructions.map(i=>
-        {if(i.id===0){
+        {if(i.order===1&&instructions.length===1){
             return(<tbody className=" border border-gray-300" key={i.id}>
                 <tr className=" border border-gray-300">
-                    <td className="border border-gray-300"><p className=" text-center">{i.order}</p></td>
-                    <td className="border border-gray-300 md:[w-100%]">
-                        <p className="md:hidden">Instruction:</p>
-                        <textarea aria-describedby={"instruction-error"+i.id} className="w-[100%] p-1 rounded h-20" name="instruction-description" placeholder="Your first instruction" defaultValue={i.description}></textarea>     {/*w-264px */}   
-                        {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
-                        <div className="flex flex-row md:hidden">
+                    <td className="border border-gray-300 w-5 align-top"><p className=" text-center">{i.order}{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
+                    <td className="border border-gray-300 md:[w-120%]">
+                        <textarea aria-describedby={"instruction-error"+i.id} className="w-[100%] resize-none p-1 rounded h-20 outline-1 outline-gray-400 md:resize-y" name="instruction-description" placeholder={"Instruction No. "+i.order} defaultValue={i.description}></textarea>     {/*w-264px */}   
+                        {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}                     
+                        {/* <div className="flex flex-row md:mb-1">
                         <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
                         <p className="mt-3 text-sm max-w-[130px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
                         {i.fileChosen && <button type="button" className="ml-2 mb-3 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
                         </div>
-                        {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                        <div className="flex flex-row-reverse mt-2 md:hidden"><button className="btn" type="button" disabled>Remove Instruction</button></div>
+                        {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>} */}
+                        <table className=" table-auto">
+                        <tbody>
+                            <tr>
+                                <td className="align-top"><input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
+                                <td >
+                                    <div className="mb-1 flex flex-col sm:flex-row">
+                                    <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing: </label>
+                                    <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">
+                                    <select name="instruction-image-filename" defaultValue={initialInstructionImages[i.order-1].url!=="" ? initialInstructionImages[i.order-1].filename : "--Select--"}  className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex)}}>
+                                        {imageSelectItems}
+                                    </select>
+                                    <div>
+                                        {images.length>0 && <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue={initialInstructionImages[i.order-1].url==="nil" ? images[0].url : initialInstructionImages[i.order-1].url}></input>}
+                                        {images.length<=0 && <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue="nil"></input>}
+                                        {images.length>0 && <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={initialInstructionImages[i.order-1].url==="nil" ? images[0].url : initialInstructionImages[i.order-1].url}></img>}
+                                        {/* <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}}>
+                                        {showEnlargedDescriptionImage && <div className=" -translate-x-24 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                                        {showEnlargedDescriptionImage && <img alt="" className="-translate-x-32 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={existingDescriptionImage.url}></img>}
+                                        </div> */}
+                                    </div>
+            
+                                    </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="align-top"><input className="sm:mt-3" defaultChecked={initialInstructionImageSettings[i.order-1]=="new" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-new-"+i.id} value="new"></input></td>
+                                <td className="">
+                                <div className="mb-1 flex flex-col sm:flex-row">
+                                <label className="ml-2 mr-5 sm:mt-2" htmlFor={"description-image-new-"+i.id}>Choose from device: </label>
+                                <div className="flex flex-row">
+                                <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                                <label htmlFor={"instruction-image-"+i.id} className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
+                                <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
+                                {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
+                                </div>
+                                {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
+                                </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className=""><input defaultChecked={initialInstructionImageSettings[i.order-1]=="none" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-none-"+i.id} value="none"></input></td>
+                                <td><label className="ml-2" htmlFor={"instruction-image-none-"+i.id}>None</label></td>
+                            </tr>
+                        </tbody>
+                        </table>
+                        <div className="flex flex-row float-right md:hidden">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                        </div>
                     </td>
-                    <td className="hidden border border-gray-300 md:table-cell w-[260px]">
-                        
-                        <div className="flex flex-col">
-                        <div>
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id={"instruction-image-existing-"+i.order} value="existing"></input>
-                            <label htmlFor={"instruction-image-existing-"+i.order}>Choose from existing: </label>
-                            <select name="instruction-image-filename" defaultValue={initialInstructionImages[i.order-1].url!=="" ? initialInstructionImages[i.order-1].filename : "--Select--"} className="select" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex)}}>
-                                {imageSelectItems}
-                            </select>
-                            <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue={initialInstructionImages[i.order-1].url==="" ? images[0].url : initialInstructionImages[i.order-1].url}></input>
+                    <td className="hidden border border-gray-300 md:table-cell">
+                        <div className="flex flex-row float-right">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                         </div>
-                        <div className="flex flex-row">
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="new" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id="instruction-image-new" value="new"></input>
-                            <label htmlFor="description-image-new">Choose from device: </label>
-                            <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>              
-                            <label htmlFor={"instruction-image-"+i.id} className="relative btn"><span className="text-sm">Choose File</span></label>
-                            <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                            {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        <div>
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="none" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id="instruction-image-none" value="none"></input>
-                            <label htmlFor="instruction-image-none">None</label>
-                        </div>
-                    
-                        {/* <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>{updateInstructionImage(i.id);}} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm min-w-[100px] max-w-[100px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 mb-2 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>} */}
-                        </div>
-                        {i.imageErrorText!="" && <p className="mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
                     </td>
-                    <td className="hidden border border-gray-300 md:table-cell w-[80px]"><button className="btn" type="button" disabled>Remove</button></td>
                 </tr>
             </tbody>)
         }else{
             return(<tbody key={i.id}>
                 <tr className="border border-gray-300">
-                    <td className="border border-gray-300"><p className="text-center">{i.order}</p></td>
-                    <td className="border border-gray-300 md:[w-100%]">
-                        <p className="md:hidden">Instruction:</p>
-                        <textarea aria-describedby={"instruction-error"+i.id} className="w-[100%] p-1 rounded h-20" name="instruction-description" defaultValue={i.description}></textarea>
+                    <td className="border border-gray-300 align-top"><p className="text-center md:w-5">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
+                    <td className="border border-gray-300 md:w-[120%]">
+                        <textarea aria-describedby={"instruction-error"+i.id} className="w-[100%] p-1 rounded h-20 resize-none outline outline-1 outline-gray-400 md:resize-y" name="instruction-description" defaultValue={i.description}></textarea>
                         {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
-                        <div className="flex flex-row md:hidden">
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm max-w-[130px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 mb-3 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                        <div className="flex flex-row-reverse mt-2 md:hidden"><button className="btn" type="button" onClick={()=>{removeInstruction(i.id)}}>Remove Instruction</button></div>
-                    </td>
-                    <td className="hidden border border-gray-300 md:table-cell w-[260px]">
-                    
-                    <div className="flex flex-col">
                         <div>
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id={"instruction-image-existing-"+i.order} value="existing"></input>
-                            <label htmlFor={"instruction-image-existing-"+i.order}>Choose from existing: </label>
-                            <select name="instruction-image-filename" defaultValue={initialInstructionImages[i.order-1].url!=="" ? initialInstructionImages[i.order-1].filename : initialInstructionImages[0].filename} className="select" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex)}}>
-                                {imageSelectItems}
-                            </select>
-                            <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue={initialInstructionImages[i.order-1].url==="" ? images[0].url : initialInstructionImages[i.order-1].url}></input>
+                        <table className="">
+                        <tbody>
+                            <tr>
+                                <td className="align-top"><input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
+                                <td>
+                                    <div className="mb-1 flex flex-col sm:flex-row">
+                                    <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing: </label>
+                                    <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">
+                                    <select name="instruction-image-filename" defaultValue={initialInstructionImages[i.order-1].url!=="" ? initialInstructionImages[i.order-1].filename : "--Select--"}  className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex)}}>
+                                        {imageSelectItems}
+                                    </select>
+                                    <div>
+                                        {images.length>0 && <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue={initialInstructionImages[i.order-1].url==="nil" ? images[0].url : initialInstructionImages[i.order-1].url}></input>}
+                                        {images.length<=0 && <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="hidden" name="instruction-image-url" defaultValue="nil"></input>}
+                                        {images.length>0 && <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={initialInstructionImages[i.order-1].url==="nil" ? images[0].url : initialInstructionImages[i.order-1].url} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>}
+                                        {images.length>0&& <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
+                                        <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
+                                        <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={initialInstructionImages[i.order-1].url==="nil" ? images[0].url : initialInstructionImages[i.order-1].url}></img>
+                                        </div>}
+                                    </div>
+                                        
+                                    </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr className="">
+                                <td className="align-top"><input className="sm:mt-3" defaultChecked={initialInstructionImageSettings[i.order-1]=="new" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-new-"+i.id} value="new"></input></td>
+                                <td className="">
+                                <div className="mb-1 flex flex-col sm:flex-row">
+                                <label className="ml-2 mr-5 sm:mt-2" htmlFor={"description-image-new-"+i.id}>Choose from device: </label>
+                                <div className="flex flex-row">
+                                <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                                <label htmlFor={"instruction-image-"+i.id} className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
+                                <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
+                                {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
+                                </div>
+                                {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
+                                </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className=""><input defaultChecked={initialInstructionImageSettings[i.order-1]=="none" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-none-"+i.id} value="none"></input></td>
+                                <td><label className="ml-2" htmlFor={"instruction-image-none-"+i.id}>None</label></td>
+                            </tr>
+                        </tbody>
+                        </table>
                         </div>
-                        <div className="flex flex-row">
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="new" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id="instruction-image-new" value="new"></input>
-                            <label htmlFor="description-image-new">Choose from device: </label>
-                            <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
-                            <label htmlFor={"instruction-image-"+i.id} className="relative btn"><span className="text-sm">Choose File</span></label>
-                            <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                            {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        <div>
-                            <input defaultChecked={initialInstructionImageSettings[i.order-1]=="none" ? true : false} type="radio" name={"instruction-image-option-"+i.order} id="instruction-image-none" value="none"></input>
-                            <label htmlFor="instruction-image-none">None</label>
-                        </div>
-                    </div>
                         {/* <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
                         <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
                         <p className="mt-3 text-sm min-w-[100px] max-w-[100px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
                         {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>} */}
-                   
-                    {i.imageErrorText!="" && <p className="mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
+                        <div className="flex flex-row float-right md:hidden">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                        </div>
                     </td>
-                    <td className=" hidden border border-gray-300 md:table-cell w-[80px]"><button className="btn" type="button" onClick={()=>{removeInstruction(i.id)}}>remove</button></td>
+                    
+                    <td className=" hidden border border-gray-300 md:table-cell">
+                    <div className="flex flex-row float-right">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                        </div>
+                    </td>
                 </tr>
             </tbody>)
         }
@@ -386,56 +613,102 @@ export default function RecipeEditPage({recipeData}){
         )
 
         const noteItems = notes.map(n=>
-            {if(n.id===0){
-                return(
-                    null
-                )
-            }else{
-                return (
+            
+               
                     <tbody className="border border-gray-300" key={n.id}><tr className="border border-gray-300">
-                        <td className="border border-gray-300"><p className="text-center">{n.order}</p></td>
+                        <td className="border border-gray-300 w-5"><p className="text-center">{n.order}</p></td>
                         <td className="border border-gray-300">
-                            <textarea aria-describedby={"notes-error"+n.id} className="w-[100%] p-1 rounded border border-gray-200" name="notes" defaultValue={n.description}></textarea>
+                            <textarea aria-describedby={"notes-error"+n.id} className="w-[100%] p-1 rounded border border-gray-200 outline outline-1 outline-gray-400 md:resize-y" name="notes" defaultValue={n.description}></textarea>
                             {state!=null && state.errorField==="notes" && state.index === n.order && <div id={"notes-error"+n.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
-                            <div className="flex flex-row-reverse"><button type="button" onClick={()=>removeNote(n.id)} className=" btn mr-1 text-sm">Remove Note</button></div>
+                            <div className="flex flex-row items-center float-right">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addNoteBelow(n.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeNote(n.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" onClick={()=>moveNoteUp(n.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveNoteDown(n.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                        </div>
                         </td>
-                        <td className="hidden border border-gray-300"><button type="button" onClick={()=>removeNote(n.id)} className=" btn mr-1 text-sm">Remove</button></td>
+                        <td className="hidden border border-gray-300">
+                        <div className="flex flex-row items-center">
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addNoteBelow(n.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeNote(n.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm mr-2" type="button" onClick={()=>moveNoteUp(n.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                <button className="btn-sm" type="button" onClick={()=>moveNoteDown(n.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                    </div>
+                        </td>
+
                     </tr></tbody>
-                )
-            }
-            }
+                
+            
             )
 
             const ingredientItems = ingredients.map(i=>
-                {if(i.id===0){
+                {if(i.order===1 && ingredients.length===1){
         
                     return  ( <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
-                                <td className="border border-gray-300"><p className="md:w-5 text-center">{i.order}</p></td>
+                                <td className="border border-gray-300 min-w-5 align-top"><p className="text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                                 <td className=" border border-gray-300 md:w-[120%]">
-                                    {/* <p className="md:hidden">Ingredient:</p> */}
-                                    <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none " name="ingredient-description" placeholder="Your first ingredient" defaultValue={i.description}></textarea>{/*w-264px */}
+                                    <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 resize-none outline outline-1 outline-gray-400" name="ingredient-description" placeholder={"Ingredient No. "+i.order} defaultValue={i.description}></textarea>{/*w-264px */}
                                     {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
+                                    <div className="flex flex-row float-right md:hidden">
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                                    </div>
                                 </td>
-                                <td className=" border border-gray-300 md:table-cell"><button className=" btn" type="button" disabled>Remove</button></td>
+                                <td className="hidden border border-gray-300 md:table-cell">
+                                    <div className="flex flex-row items-center">
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                                    </div> 
+                                </td>
                             </tr></tbody>)
                 }else{
                     return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
-                                <td className="border border-gray-300"><p className="md:w-5 text-center">{i.order}</p></td>
+                                <td className="border border-gray-300 align-top"><p className="md:w-5 text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                                 <td className=" border border-gray-300 md:w-[120%]">
-                                    {/* <p className="md:hidden">Ingredient:</p> */}
-                                    <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none" name="ingredient-description" defaultValue={i.description}></textarea>
+                                    <textarea aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none outline outline-1 outline-gray-400 md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order} defaultValue={i.description}></textarea>
                                     {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
+                                    <div className="flex flex-row float-right md:hidden">
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm mr-2" type="button" onClick={() => moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                                    </div>
                                 </td>
-                                <td className=" border border-gray-300 md:table-cell"><button className="btn" type="button" onClick={()=>{removeIngredient(i.id)}}>remove</button></td>
+                                <td className="hidden border border-gray-300 md:table-cell">
+                                    <div className="flex flex-row items-center">
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm mr-2" type="button" onClick={() => moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
+                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
+                                    </div>
+                                </td>
                     </tr></tbody>)
                 }}
                 )
+
+        function getInstrImagePopupMap(){
+            if(!instructionImagesPopupRef.current){
+                instructionImagesPopupRef.current = new Map()
+            }
+            return instructionImagesPopupRef.current
+        }
 
         function getMap(){
             if(!instructionImagesRef.current){
                  instructionImagesRef.current = new Map()
             }
             return instructionImagesRef.current
+        }
+
+        function getInstrImageMiniMap(){
+            if(!instructionImagesMiniRef.current){
+                instructionImagesMiniRef.current = new Map()
+            }
+            return instructionImagesMiniRef.current
         }
 
         function getUrlMap(){
@@ -445,40 +718,119 @@ export default function RecipeEditPage({recipeData}){
             return instructionUrlsRef.current
         }
 
+        function getInstrImageMap(){
+            
+        }
+
     return(
         <>
-            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2" action={dispatch}>
+            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={dispatch}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
-                <div>
+                <div className="hidden">
                     <ol>
                         {imageItems}
                     </ol>
                 </div>
                 <div className="flex flex-row">
                 <label className="label mr-[7px]" htmlFor="title"><span className=" text-base font-bold">Title<span className="text-base text-red-600">*</span></span></label>
-                    <input type="text" name="title" aria-describedby="title-error" className="h-10 input w-96" onChange={(e)=>setTitle(e.target.value)} value={title}/>
-                    <button type="button" className="btn" onClick={resetTitle}>Reset</button>
+                    <input type="text" name="title" aria-describedby="title-error" className="h-10 input w-44 sm:w-96 outline outline-1 outline-gray-400" onChange={(e)=>setTitle(e.target.value)} value={title}/>
+                    <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowTitleTooltip(true)} onMouseLeave={()=>setShowTitleTooltip(false)}></InformationCircleIcon>
+                        {showTitleTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showTitleTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-60 z-10 right-1 top-[40px]">The title of your recipe. Try to keep it short, yet descriptive. Press &#8635; icon to revert to original value</p>}
+                    </div>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetTitle}>&#8635;</button>
                 </div>
                 {state!=null && state.errorField==="title" && <div id="title-error" aria-live="polite" aria-atomic="true"><p className="mt-2 ml-14 text-sm text-red-500">{state.message}</p></div>}
                 <div className="form-control">
-                    <label className="label" htmlFor="description"><span className="text-base font-bold">Description<span className="text-base text-red-600">*</span></span></label><button type="button" className="btn" onClick={resetDescription}>Reset</button>
-                    <textarea className="p-1 w-[100%] textarea-bordered h-40" name="description" aria-describedby="description-error" onChange={e=>setDescription(e.target.value)} value={description}/> {/*w-282px*/}
+                    <div className="flex flex-row">
+                    <label className="label" htmlFor="description"><span className="text-base font-bold">Description<span className="text-base text-red-600">*</span></span></label>
+                    <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionTooltip(true)} onMouseLeave={()=>setShowDescriptionTooltip(false)}></InformationCircleIcon>
+                        {showDescriptionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showDescriptionTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-72 translate-x-[-100px] z-[1] top-[40px]">Provide a description of the history of the recipe, the process of making the recipe, what the end result looks like, why it tastes so good, etc. Press &#8635; icon to revert to original value</p>}
+                    </div>    
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetDescription}>&#8635;</button>
+                    </div>
+                    <textarea className="p-1 w-[100%] textarea-bordered h-40 outline outline-1 outline-gray-400 rounded md" name="description" aria-describedby="description-error" onChange={e=>setDescription(e.target.value)} value={description}/> {/*w-282px*/}
                 </div> 
                 {state!=null && state.errorField==="description" && <div id="description-error" aria-live="polite" aria-atomic="true"><p className="mt-2 text-sm text-red-500">{state.message}</p></div>}
                 <div className="">
-                    <label className="label" ><span className="text-base font-bold">Description Image:</span></label>
-                    <div className="flex flex-col">
-                        <div>
+                    <div className="flex flex-row">
+                        <label className="label" ><span className="text-base font-bold">Description Image:</span></label>
+                        <div className="relative mt-2">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionImageTooltip(true)} onMouseLeave={()=>setShowDescriptionImageTooltip(false)}></InformationCircleIcon>
+                        {showDescriptionImageTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showDescriptionImageTooltip && <p className=" text-left bg-gray-600 text-white tooltip absolute w-60 sm:w-80 translate-x-[-120px] z-[1] top-[40px]">
+                            The main picture of your recipe. Usually the picture of the end result of your recipe. If set, this is the first image a visitor will see on your recipe.
+                            <br></br>You can set it to be an image already uploaded previously for this recipe, or upload a new image.
+                        </p>}
+                        </div>
+                    </div>
+
+                    <table className=" table-auto">
+                        <tbody>
+                            <tr>
+                                <td className="align-top"><input defaultChecked={initialSetting=="existing" ? true : false} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input></td>
+                                <td >
+                                    <div className="mb-1 flex flex-col sm:flex-row">
+                                    <label className="ml-2" htmlFor="description-image-existing">Choose from existing: </label>
+                                    <div className="flex flex-row relative w-[270px] sm:w-[351px] md:w-[452px]">
+                                    <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex])}}>
+                                    {imageSelectItems}
+                                    </select>
+                                    <div>
+                                        <img className="h-8 w-12" alt="" src={existingDescriptionImage.url} onMouseEnter={()=>setShowEnlargedDescriptionImage(true)} onMouseLeave={()=>setShowEnlargedDescriptionImage(false)}></img>
+                                        {showEnlargedDescriptionImage && <div className=" -translate-x-20 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                                        {showEnlargedDescriptionImage && <img alt="" className=" -translate-x-[148px] z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={existingDescriptionImage.url}></img>}
+                                    </div>
+                                    </div>
+                                        {/* <div className="relative mt-2">
+                                            <InformationCircleIcon className="ml-1 w-6" onMouseEnter={() => setShowDescriptionTooltip(true)} onMouseLeave={() => setShowDescriptionTooltip(false)}></InformationCircleIcon>
+                                            {showDescriptionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                                            {showDescriptionTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-72 translate-x-[-100px] z-[1] top-[40px]">Provide a description of the history of the recipe, the process of making the recipe, what the end result looks like, why it tastes so good, etc. Press &#8635; icon to revert to original value</p>}
+                                        </div>   */}
+                                    <input className="hidden" name="description-image-url" defaultValue={existingDescriptionImage.url}></input>
+                                    
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="align-top"><input className=" sm:mt-3" defaultChecked={initialSetting=="new" ? true : false} type="radio" name="description-image-option" id="description-image-new" value="new"></input></td>
+                                <td className="">
+                                <div className="mb-1 flex flex-col sm:flex-row">
+                                <label className="ml-2 mr-5 sm:mt-2" htmlFor="description-image-new">Choose from device: </label>
+                                <div className="flex flex-row">
+                                <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
+                                <label htmlFor="description-image" className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
+                                <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
+                                {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
+                                </div>
+                                {descriptionImageError!=="" && <p className="mt-2 ml-1 text-sm text-red-500">{descriptionImageError}</p>}
+                                </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className=""><input defaultChecked={initialSetting=="none" ? true : false} type="radio" name="description-image-option" id="description-image-none" value="none"></input></td>
+                                <td><label className="ml-2" htmlFor="description-image-none">None</label></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {/* <div className="flex flex-col">
+                        <div className="">
+                            <div className="flex flex-row">
                             <input defaultChecked={initialSetting=="existing" ? true : false} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input>
-                            <label htmlFor="description-image-existing">Choose from existing: </label>
-                            <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="select" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex])}}>
+                            <label className="ml-2 mr-2" htmlFor="description-image-existing">Choose from existing: </label>
+                            </div>
+                            <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex])}}>
                                 {imageSelectItems}
                             </select>
                             <input className="hidden" name="description-image-url" defaultValue={existingDescriptionImage.url}></input>
                         </div>
-                        <div className="flex flex-row">
+                        <div className="flex flex-row mt-2">
                             <input defaultChecked={initialSetting=="new" ? true : false} type="radio" name="description-image-option" id="description-image-new" value="new"></input>
-                            <label htmlFor="description-image-new">Choose from device: </label>
+                            <label className="mt-3 ml-2 mr-5" htmlFor="description-image-new">Choose from device: </label>
                             <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
                             <label htmlFor="description-image" className="relative btn"><span className="text-sm">Choose File</span></label>
                             <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
@@ -486,31 +838,31 @@ export default function RecipeEditPage({recipeData}){
                         </div>
                         <div>
                             <input defaultChecked={initialSetting=="none" ? true : false} type="radio" name="description-image-option" id="description-image-none" value="none"></input>
-                            <label htmlFor="description-image-none">None</label>
+                            <label className="ml-2" htmlFor="description-image-none">None</label>
                         </div>
-                    </div>
-                    {descriptionImageError!=="" && <p className="mt-2 ml-1 text-sm text-red-500">{descriptionImageError}</p>}
+                    </div> */}
+                    
                 </div> 
 
                 <section className="flex flex-col sm:flex-row">
 
-                <section className=" sm:ml-auto sm:mr-0">
+                <section className="">
                 <div className="flex flex-row">
                     <label className="label mr-3" htmlFor="prep-time"><span className="text-base font-bold">Preperation <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input onChange={e=>setPrepTime(e.target.value)} value={prepTime} aria-describedby="prep_time-error" type="number" name="prep-time" className="mt-2 w-36 input input-bordered"/>{/*w-36 */}
-                    <button type="button" className="btn" onClick={resetPrepTime}>Reset</button>
+                    <input onChange={e=>setPrepTime(e.target.value)} value={prepTime} aria-describedby="prep_time-error" type="number" name="prep-time" className="mt-2 w-[118px] input input-bordered mr-1"/>{/*w-36 */}
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 h-[40px] text-xl my-auto" onClick={resetPrepTime}>&#8635;</button>
                 </div> 
                 {state!=null && state.errorField==="prep_time" && <div id="prep_time-error" aria-live="polite" aria-atomic="true"><p className="mt-1 ml-[230px] text-xs text-red-500">{state.message}</p></div>}
                 <div className=" flex flex-row ">
                     <label className="label mr-3 md:mr-[63px]" htmlFor="cook-time"><span className="text-base font-bold">Cook <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
-                    <input onChange={e=>setCookTime(e.target.value)} value={cookTime} aria-describedby="cook_time-error" type="number" name="cook-time" className="mt-2 w-36 input input-bordered"/>
-                    <button type="button" className="btn" onClick={resetCookTime}>Reset</button>
+                    <input onChange={e=>setCookTime(e.target.value)} value={cookTime} aria-describedby="cook_time-error" type="number" name="cook-time" className="mt-2 w-[118px] input input-bordered mr-1"/>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 h-[40px] text-xl my-auto" onClick={resetCookTime}>&#8635;</button>
                 </div>
                 {state!=null && state.errorField==="cook_time" && <div id="cook_time-error" aria-live="polite" aria-atomic="true"><p className="mt-1 ml-[230px] text-xs text-red-500">{state.message}</p></div>}
                 <div className="mt-2 flex flex-row ">
                     <label className="label mr-14 md:mr-[150px]" htmlFor="servings"><span className=" text-base font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
-                    <input onChange={e=>setServings(e.target.value)} value={servings} aria-describedby="servings-error" type="number" name="servings" className=" w-36 input input-bordered"/>
-                    <button type="button" className="btn" onClick={resetServings}>Reset</button>
+                    <input onChange={e=>setServings(e.target.value)} value={servings} aria-describedby="servings-error" type="number" name="servings" className=" w-[118px] input input-bordered mr-1"/>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 h-[40px] text-xl my-auto" onClick={resetServings}>&#8635;</button>
                 </div>
                 {state!=null && state.errorField==="servings" && <div id="servings-error" aria-live="polite" aria-atomic="true"><p className="mt-1 ml-[230px] text-xs text-red-500">{state.message}</p></div>}
                 </section>
@@ -519,8 +871,19 @@ export default function RecipeEditPage({recipeData}){
                 <div className="pt-2 border rounded-md border-gray-300 mt-2 flex flex-col">
                     <div className=" flex flex-row">
                     <label className="label" htmlFor="ingredients"><span className="text-base font-bold">Ingredients<span className="text-base text-red-600">*</span></span></label>
-                    <button type="button" className="ml-5 w-36 btn bg-gray-100" onClick={addIngredient}>Add Ingredient</button>
-                    <button type="button" className="btn" onClick={resetIngredients}>Reset</button>
+                    <div className="relative mt-3">
+                    <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowIngredientTooltip(true)} onMouseLeave={()=>setShowIngredientTooltip(false)}></InformationCircleIcon>
+                    {showIngredientTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                    {showIngredientTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-40 z-[1] top-[40px]"><span>The ingredients required.<br></br>
+                        Add: Adds ingredient to bottom of the list<br></br>
+                        &#8635; Icon: Reverts ingredient list to original<br></br>
+                        + Icon: Adds ingredient below<br></br>
+                        x Icon: Removes the ingredient<br></br>
+                        &uarr; Icon: Shifts ingredient up<br></br>
+                        &darr; Icon: Shifts ingredient down</span></p>}
+                    </div>
+                    <button type="button" className="ml-1 px-4 w-20 mr-1 btn bg-gray-100" onClick={addIngredient}>Add</button>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetIngredients}>&#8635;</button>
                     </div>
 
                     <table className="table-auto w-[100%] mt-3 border border-gray-300">{/*w-280px */}
@@ -528,7 +891,20 @@ export default function RecipeEditPage({recipeData}){
                         <tr className="border border-gray-300">
                             <th className="hidden border border-gray-300 md:table-cell"></th>
                             <th className="hidden border border-gray-300 md:table-cell"><span className="text-base font-bold">Ingredient</span></th>
-                            <th className="hidden border border-gray-300 md:table-cell"></th>
+                            <th className="hidden border border-gray-300 md:table-cell">
+                            <div className="flex flex-row ml-[25%]">
+                                <div>Actions</div>
+                                <div className="relative">
+                    <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowIngredientActionsTooltip(true)} onMouseLeave={()=>setShowIngredientActionsTooltip(false)}></InformationCircleIcon>
+                    {showIngredientActionsTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                    {showIngredientActionsTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-4 z-[1] top-[40px]"><span>       
+                        + Icon: Adds ingredient below<br></br>
+                        x Icon: Removes the ingredient<br></br>
+                        &uarr; Icon: Shifts ingredient up<br></br>
+                        &darr; Icon: Shifts ingredient down</span></p>}
+                    </div>
+                    </div>
+                            </th>
                         </tr>
                         </thead>
                         {ingredientItems}
@@ -538,14 +914,40 @@ export default function RecipeEditPage({recipeData}){
                 <div className="pt-2 border rounded-md border-gray-300 mt-2 form-control">
                     <div className="mt-3 flex flex-row">
                     <label className="label" htmlFor="instructions"><span className="text-base font-bold">Instructions<span className="text-base text-red-600">*</span></span></label>
-                    <button type="button" className="ml-5 w-36 btn bg-gray-100" onClick={addInstruction}>Add Instruction</button>
-                    <button type="button" className="btn" onClick={resetInstructions}>Reset</button>
+                    <div className="relative mt-3">
+                    <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowInstructionTooltip(true)} onMouseLeave={()=>setShowInstructionTooltip(false)}></InformationCircleIcon>
+                    {showInstructionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                    {showInstructionTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-40 z-[1] top-[40px]"><span>The instructions for making your recipe.<br></br>
+                        Add Instruction: Adds instruction to bottom of the list<br></br>
+                        + Icon: Adds instruction below<br></br>
+                        x Icon: Removes the instruction<br></br>
+                        &uarr; Icon: Shifts instruction up<br></br>
+                        &darr; Icon: Shifts instruction down<br></br>
+                        You may attach one image, max. size 7MB to each instruction</span></p>}
+                    </div>
+                    <button type="button" className="ml-1 px-4 w-20 mr-1 btn bg-gray-100" onClick={addInstruction}>Add</button>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetInstructions}>&#8635;</button>
                     </div>
 
                     <table className="table-auto w-[100%] mt-3 border border-gray-300">
                         <thead>
                         <tr className="border border-gray-300">
-                            <th className="hidden border border-gray-300 md:table-cell"></th><th className="hidden border border-gray-300 md:table-cell"><span className="text-lg font-bold">Instruction</span></th><th className="hidden border border-gray-300 md:table-cell"><span className="text-lg font-bold">Image</span></th><th className="hidden border border-gray-300 md:table-cell"></th>
+                            <th className="hidden border border-gray-300 md:table-cell"></th>
+                            <th className="hidden border border-gray-300 md:table-cell"><span className="text-lg font-bold">Instruction</span></th>
+                            <th className="hidden border border-gray-300 md:table-cell">
+                            <div className="flex flex-row ml-[25%]">
+                                <div>Actions</div>
+                                <div className="relative">
+                                <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowInstructionActionsTooltip(true)} onMouseLeave={()=>setShowInstructionActionsTooltip(false)}></InformationCircleIcon>
+                                {showInstructionActionsTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                                {showInstructionActionsTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-4 z-[1] top-[40px]"><span>          
+                                + Icon: Adds instruction below<br></br>
+                                x Icon: Removes the instruction<br></br>
+                                &uarr; Icon: Shifts instruction up<br></br>
+                                &darr; Icon: Shifts instruction down</span></p>}
+                    </div>
+                    </div>
+                            </th>
                         </tr>
                         </thead>
                         {instructionItems}
@@ -553,9 +955,19 @@ export default function RecipeEditPage({recipeData}){
                 </div>
                 <div className=" p-1 border rounded-md border-gray-200 mt-3 flex flex-col">
                     <div className="flex flex-row">
-                    <label className="label mr-[71px]" htmlFor="notes"><span className="text-base font-bold">Notes</span></label>
+                    <label className="label mr-3" htmlFor="notes"><span className="text-base font-bold">Notes</span></label>
+                    <div className="relative mt-3">
+                    <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowNotesTooltip(true)} onMouseLeave={()=>setShowNotesTooltip(false)}></InformationCircleIcon>
+                    {showNotesTooltip && <div className=" absolute right-2 bottom-8 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-t-[20px] border-t-gray-600"></div>}
+                    {showNotesTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-14 z-[1] bottom-[50px]"><span>Any additional tips you didn&apos;t include in ingredients or instructions.<br></br>
+                        Add Note: Adds note to bottom of the list<br></br>
+                        + Icon: Adds note below<br></br>
+                        x Icon: Removes the note<br></br>
+                        &uarr; Icon: Shifts note up<br></br>
+                        &darr; Icon: Shifts note down</span></p>}
+                    </div>
                     <button type="button" className=" w-36 btn" onClick={addNote}>Add Note</button>
-                    <button type="button" className="btn" onClick={resetNotes}>Reset</button>
+                    <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetNotes}>&#8635;</button>
                     </div>
                     <table className="table-auto w-[100%] mt-3 border border-gray-300">
                         <thead>
@@ -568,8 +980,24 @@ export default function RecipeEditPage({recipeData}){
                 </div>
                 <div className="flex flex-row">
                     <label className="label mr-[7px]" htmlFor="accessibility"><span className=" text-base font-bold">Accessibility<span className="text-base text-red-600">*</span></span></label>
-                    <input type="radio" name="accessibility" id="private" value="private"/><label>Private (only you can access)</label>
-                    <input checked type="radio" name="accessibility" id="public" value="public"/><label>Public (anyone with link can access, but only you can modify)</label>
+                    <div className="flex flex-col mt-6">
+                    <div className="flex flex-row">
+                        <input type="radio" name="accessibility" id="private" value="private" className="mr-2"/><label className=" mt-0.5" htmlFor="private">Private</label>
+                        <div className="relative mt-1">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowPrivateTooltip(true)} onMouseLeave={()=>setShowPrivateTooltip(false)}></InformationCircleIcon>
+                        {showPrivateTooltip && <div className=" absolute right-2 bottom-5 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-t-[20px] border-t-gray-600"></div>}
+                        {showPrivateTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-20 z-[1] bottom-[40px]">Private: Only you can view and modify</p>}
+                        </div>
+                    </div>
+                    <div className="flex flex-row">
+                        <input defaultChecked type="radio" name="accessibility" id="public" value="public" className="mr-2"/><label className="mt-0.5" htmlFor="public">Public</label>
+                        <div className="relative mt-1">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowPublicTooltip(true)} onMouseLeave={()=>setShowPublicTooltip(false)}></InformationCircleIcon>
+                        {showPublicTooltip && <div className=" absolute right-2 bottom-5 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-t-[20px] border-t-gray-600"></div>}
+                        {showPublicTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-20 z-[1] bottom-[40px]">Public: Anyone with the link can view, but only you can modify</p>}
+                        </div>
+                    </div>
+                    </div>
                 </div>
                 <div className="mt-3 mb-7 flex flex-row-reverse">
                 <button className="btn ml-3 bg-red-600">Submit</button>

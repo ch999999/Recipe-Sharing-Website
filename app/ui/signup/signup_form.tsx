@@ -88,7 +88,7 @@ export default function Form(){
                 placeholder="johndoe"
                 className="input input-bordered w-full"
                 aria-describedby="username-error"
-                required
+                
             />
             <UsernameError/>
         </div>
@@ -98,12 +98,12 @@ export default function Form(){
                 <span className="label-text">Email<span className="text-red-500">*</span></span>
             </label>
             <input
-                type="email"
+                type="text"
                 name="email"
                 placeholder="john@example.com"
                 className="input input-bordered w-full"
                 aria-describedby="email-error"
-                required
+                
             />
             <EmailError/>
         </div>
@@ -118,7 +118,7 @@ export default function Form(){
                 placeholder="John"
                 className="input input-bordered w-full"
                 aria-describedby="firstname-error"
-                required
+                
             />
             <FirstnameError/>
         </div>
@@ -144,7 +144,7 @@ export default function Form(){
                 placeholder=""
                 className="input input-bordered w-full"
                 aria-describedby="password-error"
-                required
+                
             />
             <PasswordError/>
         </div>
@@ -159,7 +159,7 @@ export default function Form(){
                 placeholder=""
                 className="input input-bordered w-full"
                 aria-describedby = "password-confirmation-error"
-                required
+                
             />
             <PasswordConfirmationError/>
         </div>
