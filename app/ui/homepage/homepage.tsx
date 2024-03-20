@@ -1,32 +1,50 @@
 'use client'
 import Link from "next/link";
+import WelcomeNote from "./welcomeNote";
+import HowToCreate from "./howToCreate";
+import PlannedChanges from "./plannedChanges";
+import UserRecipes from "./userRecipes";
 
 export default function HomePage({recipeList, isLoggedIn}){
     
 
     if(!isLoggedIn){
-        return <div>Home Page</div>
-    }else if(isLoggedIn && recipeList.length<=0){
-        return <div>Please create some recipes</div>
-    }else{
-        let count = 0;
-        const recipeItems = recipeList.map(r=>{
-            count++;
-            return(
-            <>
-            <tbody>
-                <td >{count}</td>
-                <td ><Link href={"/recipes/"+r.uuid}>{r.title}</Link></td>
-                <td >{r.createdDate}</td>
-                <td >{r.lastModifiedDate}</td>
-            </tbody>
-            </>
-            )
-        }
+        return (
+        <>
+        <WelcomeNote></WelcomeNote>
+        <HowToCreate isLoggedIn={false}></HowToCreate>
+        <PlannedChanges></PlannedChanges>
+        </>
         )
+    }else if(isLoggedIn && recipeList.length<=0){
         return (
             <>
-                <p>Your Recipes: </p>
+            <WelcomeNote></WelcomeNote>
+            <HowToCreate isLoggedIn={true}></HowToCreate>
+            <PlannedChanges></PlannedChanges>
+            </>
+            )
+    }else{
+        // let count = 0;
+        // const recipeItems = recipeList.map(r=>{
+        //     count++;
+        //     return(
+        //     <>
+        //     <tbody>
+        //         <tr>
+        //         <td >{count}</td>
+        //         <td ><Link href={"/recipes/"+r.uuid}>{r.title}</Link></td>
+        //         <td >{r.createdDate}</td>
+        //         <td >{r.lastModifiedDate}</td>
+        //         </tr>
+        //     </tbody>
+        //     </>
+        //     )
+        // }
+        //)
+        return (
+            <>
+                {/* <p>Your Recipes: </p>
                 <table className="">
                         <thead>
                         <tr className="">
@@ -37,7 +55,11 @@ export default function HomePage({recipeList, isLoggedIn}){
                         </tr>
                         </thead>
                         {recipeItems}
-                </table>
+                </table> */}
+                <UserRecipes recipeList={recipeList}></UserRecipes>
+                
+        <HowToCreate isLoggedIn={true}></HowToCreate>
+        <PlannedChanges></PlannedChanges>
             </>
 
         )

@@ -12,7 +12,7 @@ export default async function Home() {
 
   console.log(recipeList)
   return (
-    <main className="flex min-h-screen flex-col items-center ">
+    <main className="flex min-h-screen flex-col mx-auto w-[97%] lg:max-w-[1100px]">
         <HomePage recipeList={recipeList} isLoggedIn={tokenIsValid}></HomePage>
     </main>
   );

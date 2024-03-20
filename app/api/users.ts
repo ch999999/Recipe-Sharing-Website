@@ -1,4 +1,4 @@
-import { getTokenFromCookie } from "../lib/auth"
+import { getRefreshTokenFromCookie, getTokenFromCookie } from "../lib/auth"
 import { User } from "../lib/definitions"
 
 export const dynamic = 'force dynamic'
@@ -42,7 +42,7 @@ export async function createUser(user: {username: FormDataEntryValue | null, ema
 export async function signinUser(user: any){
     try{
         const resp = await fetch(
-            process.env.BACKEND_BASE_URL+"/api/User/login",{
+            process.env.BACKEND_BASE_URL+"/api/User/login2",{
                 method:"POST",
                 mode:"cors",
                 headers:{
@@ -59,4 +59,27 @@ export async function signinUser(user: any){
         return{errorField:"password", message:"Unknown error occured. Try again later"}
     }
 
+}
+
+export async function signUserOut(){
+    const tokens = {
+        AccessToken: await getTokenFromCookie(),
+        RefreshToken: await getRefreshTokenFromCookie()
+    }
+    console.log(tokens)
+    try{
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/User/logout",{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(tokens)
+            }
+        )
+        const res = await resp.json()
+        console.log(res)
+    }catch{
+
+    }
 }

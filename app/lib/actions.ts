@@ -1,10 +1,10 @@
 'use server'
 
-import { createUser } from '../api/users'
+import { createUser, signUserOut } from '../api/users'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { signinUser } from '../api/users'
-import { putTokenIntoCookie } from './auth'
+import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
 import { DELETEDescriptionImage, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
 import { POSTNewRecipe } from '../api/recipes'
@@ -37,14 +37,21 @@ export async function userLogin(formData:FormData){
             message: loginRes.message       
         }
     }else{
-        putTokenIntoCookie(loginRes.token)
+        putTokenIntoCookie(loginRes.accessToken)
+        putRefreshTokenIntoCookie(loginRes.refreshToken)
         revalidatePath('/')
         redirect('/')
     }
 }
 
 export async function signoutUser(){
+    try{
+        await signUserOut()
+    }catch{
+
+    }
     deleteTokenFromCookie()
+    deleteRefreshTokenFromCookie()
     revalidatePath('/')
     redirect('/')
 }
@@ -208,13 +215,6 @@ export async function updateRecipe(prevState: State, formData: FormData){
         isViewableByPublic = true
     }
 
-    //console.log(JSON.stringify(instructions))
-    
-
-    
-    
-    //console.log(JSON.stringify(recipe))
-
     //fileter out instruction image selection radiobutton options
     const filteredKeys = Array.from(formData.keys()).filter(key => key.startsWith('instruction-image-option-'));
     // Retrieve values for the filtered keys
@@ -333,7 +333,10 @@ export async function updateRecipe(prevState: State, formData: FormData){
             
             await POSTInstructionImage(instrImageJson)
         }
+
     }
+    revalidatePath('/recipes/'+recipe.uuid)
+    redirect('/recipes/'+recipe.uuid)
 }
 
 export async function goToEditRecipe(uuid){

@@ -12,7 +12,7 @@ export default function UtilityBar(){
             
         </div>
         <div className="flex-none -mt-3 -mb-3">
-            <ul className="menu menu-horizontal px-1"><li><button>Print</button></li></ul>
+            <ul className="menu menu-horizontal px-1"><li><button onClick={()=>print()}>Print</button></li></ul>
             <ul><li>
             <div className="relative">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowPrintTooltip(true)} onMouseLeave={()=>setShowPrintTooltip(false)}></InformationCircleIcon>
