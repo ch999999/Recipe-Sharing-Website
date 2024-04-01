@@ -63,17 +63,17 @@ function validateTitle(title){
 
 function validateDescription(description){
     const removedWhiteSpace = description.replace(/\s/g, '');
-    if(removedWhiteSpace.length<12){
+    if(removedWhiteSpace.length<5){
         return {
             errorField: "description",
-            message: "Min. 12 non-space characters required"
+            message: "Min. 5 non-space characters required"
         }
     }
 
-    if(description.length>1000){
+    if(description.length>3000){
         return{
             errorField:"description",
-            message:"Max. length of 1000 characters allowed"
+            message:"Max. length of 3000 characters allowed"
         }
     }
     return null
@@ -90,10 +90,10 @@ function validateIngredients(ingredients:[{ingredient_Number: number, descriptio
             }
         }
 
-        if(ingredients[j].description.length>300){
+        if(ingredients[j].description.length>800){
             return{
                 errorField: "ingredients",
-                message: "Max. 300 characters allowed",
+                message: "Max. 800 characters allowed",
                 index: ingredients[j].ingredient_Number
             }
         }
@@ -113,10 +113,10 @@ function validateNotes(notes){
             }
         }
 
-        if(notes[j].description.length>300){
+        if(notes[j].description.length>800){
             return{
                 errorField: "notes",
-                message: "Max. 300 characters allowed",
+                message: "Max. 800 characters allowed",
                 index: notes[j].note_Number
             }
         }
@@ -135,10 +135,10 @@ function validateInstructions(instructions){
             }
         }
 
-        if(instructions[j].description.length>300){
+        if(instructions[j].description.length>1000){
             return{
                 errorField: "instructions",
-                message: "Max. 300 characters allowed",
+                message: "Max. 1000 characters allowed",
                 index: instructions[j].ingredient_Number
             }
         }

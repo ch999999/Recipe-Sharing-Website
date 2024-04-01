@@ -1,12 +1,53 @@
-import { getRefreshTokenFromCookie, getTokenFromCookie } from "../lib/auth"
+import { deleteRefreshTokenFromCookie, deleteTokenFromCookie, getRefreshTokenFromCookie, getTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from "../lib/auth"
 import { User } from "../lib/definitions"
 
 export const dynamic = 'force dynamic'
 
-export async function checkToken(){
+export async function refreshToken(){
     const token = await getTokenFromCookie()
+    const refreshTokenn = await getRefreshTokenFromCookie()
+    if(!token || token==="" || !refreshTokenn || refreshTokenn===""){
+        return {
+            error: "relog"
+        }
+    }
+    const tokens = {
+        AccessToken: token,
+        RefreshToken: refreshTokenn
+    }
+    const authRefreshResp = await fetch(
+        process.env.BACKEND_BASE_URL+"/api/User/auth-refresh",{
+            method:"POST",
+            headers:{
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(tokens)
+        }
+    )
+    if(authRefreshResp.status===200){
+        const res = await authRefreshResp.json()
+        putTokenIntoCookie(res.accessToken)
+        putRefreshTokenIntoCookie(res.refreshToken)
+        return res
+    }else{
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        return {error: "relog"}
+    }
+    
+}
+
+export async function checkToken(){
+    
+    const token = await getTokenFromCookie()
+    const refreshToken = await getRefreshTokenFromCookie()
+    if(!token || token==="" || !refreshToken || refreshToken===""){
+        return {
+            error: "relog"
+        }
+    }
     const authResp = await fetch(
-        process.env.BACKEND_BASE_URL+"/api/User/authcheck",{ //just checks if auth token is valid. To be converted to auth refresh in the future
+        process.env.BACKEND_BASE_URL+"/api/User/authcheck",{
             method:"POST",
             mode:"cors",
             headers:{
@@ -15,6 +56,7 @@ export async function checkToken(){
             }
         }
     )
+    
     return authResp
 }
 

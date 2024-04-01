@@ -2,17 +2,20 @@
 
 import { createUser, signUserOut } from '../api/users'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { signinUser } from '../api/users'
 import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
-import { DELETEDescriptionImage, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
+import { DELETEDescriptionImage, DELETERecipe, DELETEUnusedImages, GETUserRecipes, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
 import { POSTNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
 import { POSTDescriptionImage } from '../api/recipes'
 import validateLogin from './validators/loginValidator'
 import validateNewUser from './validators/newUserValidator'
+import { refreshToken } from '../api/users'
+import { validateToken } from './auth'
+import NonexistantRecipeError from '../ui/errors/nonexistantRecipe'
 
 export type State = {
     errorField?: string | null;
@@ -20,11 +23,18 @@ export type State = {
      index: number | null;
 }
 
-export async function userLogin(formData:FormData){
+export async function userLogin(formData:FormData, nexturl){
     const loginCreds = {
         identifier: formData.get('identifier'),
         password: formData.get('password')
     }
+    // let nextUrl="";
+    // if(!nexturl.nexturl){
+        
+    // }
+    // else{
+    // nextUrl = nexturl.nexturl.replace("!","/")
+    // }
     const loginValidationRes = validateLogin(loginCreds)
     if(loginValidationRes!==null){
         return loginValidationRes
@@ -39,8 +49,13 @@ export async function userLogin(formData:FormData){
     }else{
         putTokenIntoCookie(loginRes.accessToken)
         putRefreshTokenIntoCookie(loginRes.refreshToken)
-        revalidatePath('/')
-        redirect('/')
+        if(nexturl===null){
+            nexturl=""
+        }
+        //nextUrl = decodeURIComponent(nextUrl)
+        console.log("nextUrl: "+nexturl)
+        revalidatePath('/'+nexturl,'layout')
+        redirect('/'+nexturl)
     }
 }
 
@@ -52,23 +67,30 @@ export async function signoutUser(){
     }
     deleteTokenFromCookie()
     deleteRefreshTokenFromCookie()
+    //revalidatePath('/')
     revalidatePath('/')
     redirect('/')
+
 }
 
-export async function createNewRecipe(prevState: State, formData: FormData){
+export async function createNewRecipe(formData: FormData){
     
-    // const tagList: FormDataEntryValue[] = formData.getAll('tags')  
-    // let tags:{id: FormDataEntryValue}[]=[];
-    // tagList.forEach(function(t: FormDataEntryValue){
-    //   tags.push({id: t})
-    // })
+    const tokenIsValid = await validateToken()
+    
+    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
+        const tokenRefresh = await refreshToken()
+        if(tokenRefresh.error){
+            revalidatePath('/users/login?next='+encodeURIComponent('recipes/new'))
+            redirect('/users/login?next='+encodeURIComponent('recipes/new'))
+        }
+    }
 
-    // const dietList = formData.getAll('diets')
-    // let diets=[];
-    // dietList.forEach(function(d){
-    //   diets.push({id: d})
-    // })
+    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        revalidatePath('/users/login')
+        redirect('/users/login')
+    }
 
     const ingredientList = formData.getAll('ingredient-description')
     let ingredients=[];
@@ -188,8 +210,44 @@ export async function createNewRecipe(prevState: State, formData: FormData){
 
 }
 
-export async function updateRecipe(prevState: State, formData: FormData){
-    //do nothing
+export async function deleteRecipe(recipeUUID, recipeTitle){
+    const tokenIsValid = await validateToken()
+    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
+        const tokenRefresh = await refreshToken()
+        if(tokenRefresh.error){
+            revalidatePath('/users/login?next='+encodeURIComponent('recipes/'+recipeUUID+'/edit'))
+            redirect('/users/login?next='+encodeURIComponent('recipes/'+recipeUUID+'/edit'))
+        }
+    }
+    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        revalidatePath('/users/login')
+        redirect('/users/login')
+    }
+    const resp = await DELETERecipe(recipeUUID)
+    if(resp.status===200||resp.status===204){
+        redirect('/recipes/delete-success/'+encodeURIComponent(recipeTitle))
+    }
+}
+
+export async function updateRecipe(formData: FormData){
+    const tokenIsValid = await validateToken()
+    
+    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
+        const tokenRefresh = await refreshToken()
+        if(tokenRefresh.error){
+            revalidatePath("/users/login?next="+encodeURIComponent("recipes/"+formData.get('recipe-uuid')+"/edit"))
+            redirect("/users/login?next="+encodeURIComponent("recipes/"+formData.get('recipe-uuid')+"/edit"))
+        }
+    }
+
+    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        revalidatePath('/users/login')
+        redirect('/users/login')
+    }
 
     const ingredientList = formData.getAll('ingredient-description')
     let ingredients=[];
@@ -252,8 +310,14 @@ export async function updateRecipe(prevState: State, formData: FormData){
       console.log("All clear")
       console.log("Recipe: "+JSON.stringify(recipe))
 
-      
-    const recipeUpdateResponse = await PUTRecipe(recipe)
+    const resp = await PUTRecipe(recipe)  
+    if(resp.status===400||resp.status===404){
+        notFound()
+    }
+    if(resp.status===401){
+        notFound()
+    }    
+    const recipeUpdateResponse = await resp.json()
 
 
     if(!recipeUpdateResponse.uuid){ //if does not contain property, was unsuccessful
@@ -289,6 +353,7 @@ export async function updateRecipe(prevState: State, formData: FormData){
         await POSTUploadUpdatedRecipeImage(descImageJson)
     }
     }else if(descriptionImageOption==="existing"){
+        console.log("Yesss, exisintg")
         const descpImageUrl = formData.get("description-image-url")
         const descpImageFilename = formData.get("description-image-filename")
         const descImageJson={
@@ -297,7 +362,7 @@ export async function updateRecipe(prevState: State, formData: FormData){
             filename: descpImageFilename,
             url: descpImageUrl
         }
-        console.log("descImage: "+JSON.stringify(descImageJson))
+        console.log("descImageUrl: "+descpImageUrl)
         await POSTUpdatedDescriptionImage(descImageJson)
     }else if(descriptionImageOption==="none"){
         const recipeUUID = recipeUpdateResponse.uuid
@@ -335,8 +400,17 @@ export async function updateRecipe(prevState: State, formData: FormData){
         }
 
     }
+
+    let oriImageUrls = formData.getAll('oriImageUrls')
+    // const oriImageUrlsJson = {
+    //     urlList: oriImageUrls
+    // }
+    //console.log("oriImageUrls: "+JSON.stringify(oriImageUrlsJson))
+    await DELETEUnusedImages(oriImageUrls)
+
     revalidatePath('/recipes/'+recipe.uuid)
     redirect('/recipes/'+recipe.uuid)
+    
 }
 
 export async function goToEditRecipe(uuid){
@@ -378,8 +452,9 @@ export async function createNewUser(formData: FormData){
             console.log("Error logging in: "+JSON.stringify(loginRes))
             redirect('/users/login')
         }else{
-            putTokenIntoCookie(loginRes.token)
-            revalidatePath('/')
+            putRefreshTokenIntoCookie(loginRes.refreshToken)
+            putTokenIntoCookie(loginRes.accessToken)
+            revalidatePath('/', "layout")
             redirect('/')
         }
     }
@@ -389,4 +464,31 @@ export async function createNewUser(formData: FormData){
 export async function fetchDiets(){
     const diets = await getDiets();
     return diets;
+}
+
+export async function tokenRefresh(nexturl){
+    const tokenRefresh = await refreshToken()
+        if(tokenRefresh.error){
+            deleteRefreshTokenFromCookie()
+            deleteTokenFromCookie()
+            
+            const nextUrlEncoded = encodeURIComponent(nexturl)
+            revalidatePath('/users/login?next='+nextUrlEncoded)
+            redirect('/users/login?next='+nextUrlEncoded)
+        }
+        
+        revalidatePath('/'+nexturl)
+        redirect('/'+nexturl)
+}
+
+export async function redirectToLogin(nexturl){
+    
+    revalidatePath('/users/login/'+nexturl)
+    redirect('/users/login/'+nexturl)
+}
+
+export async function fetchUserRecipes(){
+    const recipes = await GETUserRecipes()
+    console.log("GOTRecipes: "+ recipes)
+    return recipes
 }

@@ -1,6 +1,7 @@
 'use server'
 import { cookies } from "next/headers";
-import { checkToken } from "../api/users";
+import { checkToken, refreshToken } from "../api/users";
+
 
 export async function getTokenFromCookie(){
     const cookieStore = cookies()
@@ -40,16 +41,38 @@ export async function putRefreshTokenIntoCookie(refreshToken: any){
 
 export async function validateToken(){
 
-    if(await getTokenFromCookie()==null){
-        return false;
+    const tokenCheck = await checkToken()
+    if(tokenCheck.error){
+        return {
+            success: false,
+            tryRefresh: false
+        }
+    }else if(tokenCheck.status===404){
+        
+        return {
+            success:false,
+            tryRefresh:true
+        }
+    }else if(tokenCheck.status===200){
+        return {
+            success:true,
+            tryRefresh:false
+        }
+    }else{
+        return {
+            success:false,
+            tryRefresh:false
+        }
     }
 
-    const tokenValidity = await checkToken()
 
-    if(tokenValidity.status === 200){
-        return true;
-    }
-    return false;
+
+    // const tokenValidity = await checkToken()
+
+    // if(tokenValidity.status === 200){
+    //     return true;
+    // }
+    // return false;
 }
 
 export async function deleteTokenFromCookie(){
