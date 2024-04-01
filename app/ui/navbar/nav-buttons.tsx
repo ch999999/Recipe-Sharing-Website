@@ -15,7 +15,7 @@ export async function UserButtons(){
 
     const tokenIsValid = await validateToken()
 
-    if(!tokenIsValid){
+    if(!tokenIsValid.success){
     return(
     <>
     <ul className="hidden menu menu-horizontal px-1 sm:inline"><li><Link href="/users/signup">Create Recipe</Link></li></ul>

@@ -1,16 +1,27 @@
 'use client'
 import Image from "next/image";
 import { goToEditRecipe } from "@/app/lib/actions";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import UtilityBar from "./recipe_view_utility_bar";
+import { tokenRefresh } from "@/app/lib/actions";
+
+import DeletionModal from "./recipe_delete_modal";
+import { useFormStatus } from "react-dom";
 
 function editRecipe(uuid){
     goToEditRecipe(uuid)
 }
 
+
+
 let imageCount = 0
 
-export default function View({recipeData}){
+
+
+export default function View({recipeData, uuid}){
+    
+
+    const [showDelete, setShowDelete] = useState(false);
     const canEdit = recipeData.has_edit_permission
     const recipe = recipeData.recipe; 
     const recipe_media = recipeData.recipe_description_media;
@@ -19,13 +30,6 @@ export default function View({recipeData}){
     const prepTime = recipe.prep_Time_Mins
     const cookTime = recipe.cook_Time_Mins
     const servings = recipe.servings
-    const createdDate = recipe.createdDate
-    const lastModifiedDate = recipe.lastModifiedDate
-    const cuisine = recipe.cuisine.cuisine_Name
-    const difficulty = recipe.difficulty.difficulty_Name
-
-    const tags = recipe.tags
-    const diets = recipe.diets
 
     const descriptionImageRef = useRef(null)
     const descriptionImageButtonRef = useRef(null)
@@ -146,9 +150,16 @@ export default function View({recipeData}){
         }
     }
 
+    function hideDeleteModal(){
+        setShowDelete(false)
+    }
+
+    
+
     return (
         <>
             <UtilityBar></UtilityBar>
+            {showDelete && <DeletionModal hide={hideDeleteModal} recipeUUID={recipe.uuid} recipeTitle={recipe.title}></DeletionModal>}
             <h1 className="text-center text-xl font-bold">{title}</h1>
 
             <main className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]">
@@ -205,7 +216,10 @@ export default function View({recipeData}){
             </section>
 
             <div className="flex flex-row-reverse">
-                {canEdit && <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={()=>editRecipe(recipe.uuid)}>Edit</button>}
+                
+                {canEdit &&<div> <button type="button" className="mt-1 btn w-24 bg-red-500 print:hidden" onClick={()=>setShowDelete(true)}>Delete</button> 
+                <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={(e)=>{e.preventDefault(); editRecipe(recipe.uuid)}}>Edit</button></div>}
+                
             </div>
             </main>
         </>

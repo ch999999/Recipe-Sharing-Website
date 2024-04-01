@@ -1,46 +1,46 @@
 import { getTokenFromCookie } from "../lib/auth";
 export const dynamic='force-dynamic'
 
-export async function getDiets(){
-    try{
-        const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/diets",{cache: 'no-store'})
-        const res = await resp.json();
-        return res
-    }catch(error){
-        console.log(error)
-    }
-}
+// export async function getDiets(){
+//     try{
+//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/diets",{cache: 'no-store'})
+//         const res = await resp.json();
+//         return res
+//     }catch(error){
+//         console.log(error)
+//     }
+// }
 
-export async function getTags(){
-    try{
-        const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/tags",{cache: 'no-store'})
-        const res = await resp.json();
-        return res
-    }catch(error){
-        console.log(error)
-    }
-}
+// export async function getTags(){
+//     try{
+//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/tags",{cache: 'no-store'})
+//         const res = await resp.json();
+//         return res
+//     }catch(error){
+//         console.log(error)
+//     }
+// }
 
-export async function getCuisines(){
-    try{
-        const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/cuisines",{cache: 'no-store'})
+// export async function getCuisines(){
+//     try{
+//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/cuisines",{cache: 'no-store'})
         
-        const res = await resp.json();
-        return res
-    }catch(error){
-        console.log(error)
-    }
-}
+//         const res = await resp.json();
+//         return res
+//     }catch(error){
+//         console.log(error)
+//     }
+// }
 
-export async function getDifficulties(){
-    try{
-        const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/difficulties",{cache: 'no-store'})
-        const res = await resp.json();
-        return res
-    }catch(error){
-        console.log(error)
-    }
-}
+// export async function getDifficulties(){
+//     try{
+//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/difficulties",{cache: 'no-store'})
+//         const res = await resp.json();
+//         return res
+//     }catch(error){
+//         console.log(error)
+//     }
+// }
 
 export async function POSTNewRecipe(recipe){
     try{
@@ -94,14 +94,14 @@ export async function POSTInstructionImage(image){
                 method: "POST",
                 headers:{
                     "Content-Type": "application/json",
-                    "Authorzation": "Bearer "+token
+                    "Authorization": "Bearer "+token
                 },
                 body: JSON.stringify(image)
             }
         )
-        const res=await resp.json()
-        console.log(res)
-        return res
+        // const res=await resp.json()
+        // console.log(res)
+        // return res
     }catch(error){
         console.log(error)
     }
@@ -120,18 +120,19 @@ export async function PUTRecipe(recipe){
                 body: JSON.stringify(recipe)
             }
         )
-        
-        const res = await resp.json()
-        console.log(res)
-        return res
+        return resp
+        // const res = await resp.json()
+        // console.log(res)
+        // return res
     }catch(error){
+        
         console.log(error)
     }
 }
 
 export async function GETRecipe(uuid){
     try{
-        const token  =await getTokenFromCookie()
+        const token =await getTokenFromCookie()
         if(token){
         const resp  =await fetch(
             process.env.BACKEND_BASE_URL+"/api/Recipe/"+uuid,{
@@ -141,8 +142,9 @@ export async function GETRecipe(uuid){
                 }
             }         
         )
-        const res= await resp.json()
-        return res
+        //const res= await resp.json()
+        //return res
+        return resp
         }else{
             const resp  =await fetch(
                 process.env.BACKEND_BASE_URL+"/api/Recipe/NoAuth/"+uuid,{
@@ -152,8 +154,10 @@ export async function GETRecipe(uuid){
                     }
                 }         
             )
-            const res= await resp.json()
-            return res
+            // const res= await resp.json()
+            // return res
+            console.log("respstatus:"+resp.status)
+            return resp
         }
         
     }catch(error){
@@ -184,6 +188,7 @@ export async function GETUserRecipes(){
 export async function DELETEDescriptionImage(recipeUUID){
     try{
         const token = await getTokenFromCookie()
+        
         if(token){
             const resp = await fetch(
                 process.env.BACKEND_BASE_URL+"/api/Recipe/DescriptionImage/"+recipeUUID,{
@@ -193,8 +198,8 @@ export async function DELETEDescriptionImage(recipeUUID){
                     }
                 }
             )
-            const res = await resp.json()
-            return res
+            // const res = await resp.json()
+            // return res
         }
     }catch(error){
         console.log(error)
@@ -209,14 +214,14 @@ export async function POSTUploadUpdatedRecipeImage(image){
                 method: "POST",
                 headers:{
                     "Content-Type": "application/json",
-                    "Authorzation": "Bearer "+token
+                    "Authorization": "Bearer "+token
                 },
                 body: JSON.stringify(image)
             }
         )
-        const res=await resp.json()
-        console.log(res)
-        return res
+        //const res=await resp.json()
+        console.log(resp)
+        return resp
     }catch(error){
         console.log(error)
     }
@@ -225,6 +230,7 @@ export async function POSTUploadUpdatedRecipeImage(image){
 export async function POSTUpdatedDescriptionImage(image){
     try{
         const token = await getTokenFromCookie()
+        console.log("descImage: "+JSON.stringify(image))
         const resp = await fetch(
             process.env.BACKEND_BASE_URL+"/api/Recipe/UpdateDescriptionImage",{
                 method: "POST",
@@ -239,6 +245,53 @@ export async function POSTUpdatedDescriptionImage(image){
         const res=await resp.json()
         console.log(res)
         return res
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function DELETERecipe(recipeUUID){
+    try{
+        const token = await getTokenFromCookie()
+
+        if(token){
+            const resp = await fetch(
+                process.env.BACKEND_BASE_URL+"/api/Recipe/Delete/"+recipeUUID,{
+                    method: "DELETE",
+                    headers:{
+                        "Authorization": "Bearer "+token
+                    }
+                }
+            )
+            //const res = await resp.json()
+            return resp
+        }
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function DELETEUnusedImages(imgUrls){
+    try{
+        const token = await getTokenFromCookie()
+        console.log(imgUrls)
+        console.log("imgUrls: "+JSON.stringify(imgUrls))
+        if(token){
+            const resp = await fetch(
+                process.env.BACKEND_BASE_URL+"/api/Recipe/UnusedImages/Delete",{
+                    method: "DELETE",
+                    headers:{
+                        "Content-Type":"application/json",
+                        "Authorization": "Bearer "+token
+                    },
+                    body: JSON.stringify(imgUrls)
+                }
+            )
+            
+            //const res = await resp.json()
+            //console.log(resp)
+            return resp
+        }
     }catch(error){
         console.log(error)
     }
