@@ -1,5 +1,5 @@
 import Link from "next/link"
-export default function DeleteSuccess({title}){
+export default function DeleteSuccess({title}:{title:string}){
     return (
         <div className="flex flex-col ml-2">
             <p className="text-xl font-bold">Reicpe &apos;{title}&apos; was deleted successfully.</p>

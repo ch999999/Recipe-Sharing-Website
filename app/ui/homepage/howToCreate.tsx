@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-export default function HowToCreate({isLoggedIn}){
+export default function HowToCreate({isLoggedIn}:{isLoggedIn:boolean}){
     return(
         <>
             <div className="mt-2">

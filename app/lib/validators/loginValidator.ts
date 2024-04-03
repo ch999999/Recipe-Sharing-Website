@@ -1,4 +1,6 @@
-export default function validateLogin(login){
+import { Login } from "../definitions";
+
+export default function validateLogin(login:Login){
     if(!login.identifier || login.identifier.length<1){
         return {
             errorField: "identifier",

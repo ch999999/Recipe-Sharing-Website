@@ -6,7 +6,7 @@ import { notFound, redirect } from 'next/navigation'
 import { signinUser } from '../api/users'
 import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
-import { DELETEDescriptionImage, DELETERecipe, DELETEUnusedImages, GETUserRecipes, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe, getDiets } from '../api/recipes'
+import { DELETEDescriptionImage, DELETERecipe, DELETEUnusedImages, GETUserRecipes, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe } from '../api/recipes'
 import { POSTNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
@@ -16,6 +16,7 @@ import validateNewUser from './validators/newUserValidator'
 import { refreshToken } from '../api/users'
 import { validateToken } from './auth'
 import NonexistantRecipeError from '../ui/errors/nonexistantRecipe'
+import { Ingredient, Instruction, Note } from './definitions'
 
 export type State = {
     errorField?: string | null;
@@ -23,10 +24,10 @@ export type State = {
      index: number | null;
 }
 
-export async function userLogin(formData:FormData, nexturl){
+export async function userLogin(formData:FormData, nexturl:string){
     const loginCreds = {
-        identifier: formData.get('identifier'),
-        password: formData.get('password')
+        identifier: formData.get('identifier')?.toString(),
+        password: formData.get('password')?.toString()
     }
     // let nextUrl="";
     // if(!nexturl.nexturl){
@@ -93,21 +94,21 @@ export async function createNewRecipe(formData: FormData){
     }
 
     const ingredientList = formData.getAll('ingredient-description')
-    let ingredients=[];
+    let ingredients:Ingredient[]=[];
     ingredientList.forEach(function(i){
-      ingredients.push({ingredient_Number: ingredients.length+1, description: i})
+      ingredients.push({ingredient_Number: ingredients.length+1, description: i.toString()})
     })
 
     const noteList = formData.getAll('notes')
-    let notes=[];
+    let notes:Note[]=[];
     noteList.forEach(function(n){
-      notes.push({note_Number: notes.length+1, description: n})
+      notes.push({note_Number: notes.length+1, description: n.toString()})
     })
 
     const instructionList = formData.getAll('instruction-description')
-    let instructions=[];
+    let instructions:Instruction[]=[];
     instructionList.forEach(function(i){
-      instructions.push({sequence_Number: instructions.length+1, description: i})
+      instructions.push({sequence_Number: instructions.length+1, description: i.toString()})
     })
 
     const accessibility = formData.get('accessibility')
@@ -116,18 +117,22 @@ export async function createNewRecipe(formData: FormData){
         isViewableByPublic = true
     }
 
+    
+    const prepTime = Number(formData.get('prep-time'))
+    const cookTime = Number(formData.get('cook-time'))
+    const servings = Number(formData.get('servings'))
+    
+    
     //console.log(JSON.stringify(instructions))
     let recipe = {
-      title: formData.get('title'),
-      description: formData.get('description'),
+      title: formData.get('title')?.toString(),
+      description: formData.get('description')?.toString(),
       difficultyId: 1,
-      prep_Time_Mins: formData.get('prep-time'),
-      cook_Time_Mins: formData.get('cook-time'),
-      servings: formData.get('servings'),
+      prep_Time_Mins: prepTime,
+      cook_Time_Mins: cookTime,
+      servings: servings,
       isViewableByPublic: isViewableByPublic,
       cuisineId: 1,
-    //   tags: tags,
-    //   diets: diets,
       ingredients: ingredients,
       notes: notes,
       instructions: instructions
@@ -210,7 +215,7 @@ export async function createNewRecipe(formData: FormData){
 
 }
 
-export async function deleteRecipe(recipeUUID, recipeTitle){
+export async function deleteRecipe(recipeUUID:string, recipeTitle:string){
     const tokenIsValid = await validateToken()
     if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
         const tokenRefresh = await refreshToken()
@@ -226,6 +231,10 @@ export async function deleteRecipe(recipeUUID, recipeTitle){
         redirect('/users/login')
     }
     const resp = await DELETERecipe(recipeUUID)
+    if(!resp){
+        //proper ui response
+        return
+    }
     if(resp.status===200||resp.status===204){
         redirect('/recipes/delete-success/'+encodeURIComponent(recipeTitle))
     }
@@ -250,21 +259,21 @@ export async function updateRecipe(formData: FormData){
     }
 
     const ingredientList = formData.getAll('ingredient-description')
-    let ingredients=[];
+    let ingredients:Ingredient[]=[];
     ingredientList.forEach(function(i){
-      ingredients.push({ingredient_Number: ingredients.length+1, description: i})
+      ingredients.push({ingredient_Number: ingredients.length+1, description: i.toString()})
     })
 
     const noteList = formData.getAll('notes')
-    let notes=[];
+    let notes:Note[]=[];
     noteList.forEach(function(n){
-      notes.push({note_Number: notes.length+1, description: n})
+      notes.push({note_Number: notes.length+1, description: n.toString()})
     })
 
     const instructionList = formData.getAll('instruction-description')
-    let instructions=[];
+    let instructions:Instruction[]=[];
     instructionList.forEach(function(i){
-      instructions.push({sequence_Number: instructions.length+1, description: i, images:[]})
+      instructions.push({sequence_Number: instructions.length+1, description: i.toString(), images:[]})
     })
 
     const accessibility = formData.get('accessibility')
@@ -284,17 +293,24 @@ export async function updateRecipe(formData: FormData){
 
     for(let i=0; i<values.length; i++){
         if(values[i].toString()==="existing"){
-            instructions[i].images.push({filename: filenames[i], url: instructionUrls[i], image_Number:1})
+            const instruction = instructions[i]
+            if(!instruction.images){
+                continue
+            }
+            instruction.images.push({filename: filenames[i].toString(), url: instructionUrls[i].toString(), image_Number:1})
         }
     }
+    const prepTime = Number(formData.get('prep-time'))
+    const cookTime = Number(formData.get('cook-time'))
+    const servings = Number(formData.get('servings'))
 
     let recipe = {
-        uuid: formData.get('recipe-uuid'),
-        title: formData.get('title'),
-        description: formData.get('description'),
-        prep_Time_Mins: formData.get('prep-time'),
-        cook_Time_Mins: formData.get('cook-time'),
-        servings: formData.get('servings'),
+        uuid: formData.get('recipe-uuid')?.toString(),
+        title: formData.get('title')?.toString(),
+        description: formData.get('description')?.toString(),
+        prep_Time_Mins: prepTime,
+        cook_Time_Mins: cookTime,
+        servings: servings,
         isViewableByPublic: isViewableByPublic,
         ingredients: ingredients,
         notes: notes,
@@ -310,7 +326,11 @@ export async function updateRecipe(formData: FormData){
       console.log("All clear")
       console.log("Recipe: "+JSON.stringify(recipe))
 
-    const resp = await PUTRecipe(recipe)  
+    const resp = await PUTRecipe(recipe)
+    if(!resp){
+        //proper ui response
+        return
+    }  
     if(resp.status===400||resp.status===404){
         notFound()
     }
@@ -353,14 +373,13 @@ export async function updateRecipe(formData: FormData){
         await POSTUploadUpdatedRecipeImage(descImageJson)
     }
     }else if(descriptionImageOption==="existing"){
-        console.log("Yesss, exisintg")
         const descpImageUrl = formData.get("description-image-url")
         const descpImageFilename = formData.get("description-image-filename")
         const descImageJson={
             recipeUUID: recipeUpdateResponse.uuid,
             filetype: "image",
-            filename: descpImageFilename,
-            url: descpImageUrl
+            filename: descpImageFilename?.toString(),
+            url: descpImageUrl?.toString()
         }
         console.log("descImageUrl: "+descpImageUrl)
         await POSTUpdatedDescriptionImage(descImageJson)
@@ -413,7 +432,7 @@ export async function updateRecipe(formData: FormData){
     
 }
 
-export async function goToEditRecipe(uuid){
+export async function goToEditRecipe(uuid:string){
     redirect('/recipes/'+uuid+'/edit')
 }
 
@@ -425,11 +444,11 @@ export async function createNewUser(formData: FormData){
         }
     }
     const user = {
-        username: formData.get('username'),
-        email: formData.get('email'),
-        firstname: formData.get('firstname'),
-        lastname: formData.get('lastname'),
-        password: formData.get('password')
+        username: formData.get('username')?.toString(),
+        email: formData.get('email')?.toString(),
+        firstname: formData.get('firstname')?.toString(),
+        lastname: formData.get('lastname')?.toString(),
+        password: formData.get('password')?.toString()
     } 
     const userValidationError = validateNewUser(user)
     if(userValidationError){
@@ -461,12 +480,9 @@ export async function createNewUser(formData: FormData){
 
 }
 
-export async function fetchDiets(){
-    const diets = await getDiets();
-    return diets;
-}
 
-export async function tokenRefresh(nexturl){
+
+export async function tokenRefresh(nexturl:string){
     const tokenRefresh = await refreshToken()
         if(tokenRefresh.error){
             deleteRefreshTokenFromCookie()
@@ -481,7 +497,7 @@ export async function tokenRefresh(nexturl){
         redirect('/'+nexturl)
 }
 
-export async function redirectToLogin(nexturl){
+export async function redirectToLogin(nexturl:string){
     
     revalidatePath('/users/login/'+nexturl)
     redirect('/users/login/'+nexturl)

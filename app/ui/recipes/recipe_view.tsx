@@ -1,14 +1,16 @@
 'use client'
 import Image from "next/image";
 import { goToEditRecipe } from "@/app/lib/actions";
-import { useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import UtilityBar from "./recipe_view_utility_bar";
 import { tokenRefresh } from "@/app/lib/actions";
 
 import DeletionModal from "./recipe_delete_modal";
 import { useFormStatus } from "react-dom";
+import { Description_Image, Ingredient, Instruction, Note, Recipe } from "@/app/lib/definitions";
+import { notFound, redirect } from "next/navigation";
 
-function editRecipe(uuid){
+function editRecipe(uuid:string){
     goToEditRecipe(uuid)
 }
 
@@ -18,8 +20,7 @@ let imageCount = 0
 
 
 
-export default function View({recipeData, uuid}){
-    
+export default function View({recipeData, uuid}:{recipeData:{recipe_description_media:Description_Image, recipe:Recipe, has_edit_permission:boolean}, uuid:string}){
 
     const [showDelete, setShowDelete] = useState(false);
     const canEdit = recipeData.has_edit_permission
@@ -31,29 +32,32 @@ export default function View({recipeData, uuid}){
     const cookTime = recipe.cook_Time_Mins
     const servings = recipe.servings
 
-    const descriptionImageRef = useRef(null)
+    const descriptionImageRef = useRef<HTMLImageElement>(null)
     const descriptionImageButtonRef = useRef(null)
-    const instructionImagesRef = useRef(null)
-    const instructionImagesButtonsRef = useRef(null)
+    const instructionImagesRef = useRef<Map<string, HTMLImageElement>|null>(null)
+    const instructionImagesButtonsRef = useRef<Map<string, HTMLElement>|null>(null)
 
     const ingredients = recipe.ingredients
-    function compareIngredientsBySequence(a,b){
+    function compareIngredientsBySequence(a:Ingredient,b:Ingredient){
         return a.ingredient_Number - b.ingredient_Number
     }
+    if(ingredients){
     ingredients.sort(compareIngredientsBySequence)
-
-    const notes = recipe.notes
-    function compareNotesBySequence(a,b){
-        return a.noteNumber-b.noteNumber
     }
+    const notes = recipe.notes
+    function compareNotesBySequence(a:Note,b:Note){
+        return a.note_Number-b.note_Number
+    }
+    if(notes){
     notes.sort(compareNotesBySequence)
-
+    }
     const instructions = recipe.instructions
-    function compareInstructionsBySequence(a,b){
+    function compareInstructionsBySequence(a:Instruction,b:Instruction){
         return a.sequence_Number - b.sequence_Number
     }
+    if(instructions){
     instructions.sort(compareInstructionsBySequence)
-    
+    }
     let description_media_url = null;
     let description_media_description = null;
     if(recipe_media){
@@ -61,7 +65,7 @@ export default function View({recipeData, uuid}){
         description_media_description = recipe_media.description
     }
 
-    function getMap(){
+    function getMap():Map<string,HTMLElement>{
         if(!instructionImagesRef.current){
             instructionImagesRef.current = new Map()
         }
@@ -74,8 +78,9 @@ export default function View({recipeData, uuid}){
         }
         return instructionImagesButtonsRef.current
     }
-
-    const ingredientItems = ingredients.map(i=>
+    let ingredientItems;
+    if(ingredients){
+    ingredientItems = ingredients.map(i=>
         <>
         <tbody key={i.uuid}>
             <tr>
@@ -85,8 +90,11 @@ export default function View({recipeData, uuid}){
         </tbody>
         </>
         )
+    }
 
-    const instructionItems = instructions.map(i=>
+    let instructionItems;
+    if(instructions){
+    instructionItems = instructions.map(i=>
         <>
         <tbody key={i.uuid}>
             <tr>
@@ -94,16 +102,19 @@ export default function View({recipeData, uuid}){
             <td>
                 <div className="ml-2">
                 <p>{i.description}</p>
-                {i.images.length>0 && i.images[0].url!==null && 
-                 <div className=" flex flex-col"><img className=" relative w-[70%] aspect-[97/56]" ref={(node)=>{const map=getMap(); if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}}  src={i.images[0].url} alt=""></img><button ref={(node)=>{const map = getInstrImageButtonMap(); if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}} className=" w-[80px] h-[24px] outline outline-1 text-sm bg-opacity-45 bg-zinc-200 relative ml-1 bottom-[26px] z-[2] print:hidden" onClick={()=>{const imageMap = getMap(); const imageRef = imageMap.get(i.uuid); const buttonMap = getInstrImageButtonMap(); const buttonRef = buttonMap.get(i.uuid); changeImageVisibility2(imageRef, buttonRef)}}>Hide image</button></div>} 
+                {i.images&&i.images.length>0 && i.images[0].url!==null && 
+                 <div className=" flex flex-col"><img className=" relative w-[70%] aspect-[97/56]" ref={(node)=>{const map=getMap(); if(!i.uuid){return} if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}}  src={i.images[0].url} alt=""></img><button ref={(node)=>{const map = getInstrImageButtonMap(); if(!i.uuid){return} if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}} className=" w-[80px] h-[24px] outline outline-1 text-sm bg-opacity-45 bg-zinc-200 relative ml-1 bottom-[26px] z-[2] print:hidden" onClick={()=>{const imageMap = getMap(); if(!i.uuid){return} const imageRef = imageMap.get(i.uuid); const buttonMap = getInstrImageButtonMap(); const buttonRef = buttonMap.get(i.uuid); if(!imageRef||!buttonRef){return} changeImageVisibility2(imageRef, buttonRef)}}>Hide image</button></div>} 
                 </div>
             </td>
             </tr>
         </tbody>
         </>
         )
+    }
 
-    const noteItems = notes.map(n=>
+    let noteItems;
+    if(notes){
+    noteItems = notes.map(n=>
         <>
         <tbody key={n.uuid}>
             <tr>
@@ -120,8 +131,12 @@ export default function View({recipeData, uuid}){
         //     <p key={n.uuid}>{n.note_Number+". "}{n.description}</p>
         // </>
         )
+    }
 
-    function changeImageVisibility(imageRef, buttonRef){
+    function changeImageVisibility(imageRef:RefObject<HTMLImageElement>, buttonRef:RefObject<HTMLElement>){
+        if(!imageRef.current||!buttonRef.current){
+            return
+        }
         if(imageRef.current.style.display=="none"){
             imageRef.current.style.display="inline-block"
             buttonRef.current.style.bottom="24px"
@@ -136,7 +151,7 @@ export default function View({recipeData, uuid}){
         
     }
 
-    function changeImageVisibility2(imageRef, buttonRef){
+    function changeImageVisibility2(imageRef:HTMLElement, buttonRef:HTMLElement){
         if(imageRef.style.display=="none"){
             imageRef.style.display="inline-block"
             buttonRef.style.bottom="24px"
@@ -154,6 +169,9 @@ export default function View({recipeData, uuid}){
         setShowDelete(false)
     }
 
+    if(!recipe.uuid||!recipe.title){
+        return
+    }
     
 
     return (
@@ -218,7 +236,7 @@ export default function View({recipeData, uuid}){
             <div className="flex flex-row-reverse">
                 
                 {canEdit &&<div> <button type="button" className="mt-1 btn w-24 bg-red-500 print:hidden" onClick={()=>setShowDelete(true)}>Delete</button> 
-                <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={(e)=>{e.preventDefault(); editRecipe(recipe.uuid)}}>Edit</button></div>}
+                <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={(e)=>{e.preventDefault(); if(!recipe.uuid){return} editRecipe(recipe.uuid)}}>Edit</button></div>}
                 
             </div>
             </main>

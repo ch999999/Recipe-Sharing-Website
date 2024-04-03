@@ -1,5 +1,7 @@
 import { deleteRecipe } from "@/app/lib/actions"
-export default function DeletionModal({hide, recipeUUID, recipeTitle}){
+export default function DeletionModal({hide, recipeUUID, recipeTitle}:{hide:(()=>void), recipeUUID:string, recipeTitle:string}){
+    
+    
     return(
         <>
         

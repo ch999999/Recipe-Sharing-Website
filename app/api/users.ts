@@ -1,5 +1,5 @@
 import { deleteRefreshTokenFromCookie, deleteTokenFromCookie, getRefreshTokenFromCookie, getTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from "../lib/auth"
-import { User } from "../lib/definitions"
+import { Login, User } from "../lib/definitions"
 
 export const dynamic = 'force dynamic'
 
@@ -43,7 +43,7 @@ export async function checkToken(){
     const refreshToken = await getRefreshTokenFromCookie()
     if(!token || token==="" || !refreshToken || refreshToken===""){
         return {
-            error: "relog"
+            status: 400
         }
     }
     const authResp = await fetch(
@@ -60,7 +60,7 @@ export async function checkToken(){
     return authResp
 }
 
-export async function createUser(user: {username: FormDataEntryValue | null, email: FormDataEntryValue | null, password:FormDataEntryValue | null}){
+export async function createUser(user:User){
     
     try{
     const resp = await fetch(
@@ -81,7 +81,7 @@ export async function createUser(user: {username: FormDataEntryValue | null, ema
     }
 }
 
-export async function signinUser(user: any){
+export async function signinUser(user:Login){
     try{
         const resp = await fetch(
             process.env.BACKEND_BASE_URL+"/api/User/login2",{

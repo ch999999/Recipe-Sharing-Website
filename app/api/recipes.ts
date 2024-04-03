@@ -1,48 +1,8 @@
 import { getTokenFromCookie } from "../lib/auth";
+import { Description_Image, Instruction_Image, Recipe } from "../lib/definitions";
 export const dynamic='force-dynamic'
 
-// export async function getDiets(){
-//     try{
-//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/diets",{cache: 'no-store'})
-//         const res = await resp.json();
-//         return res
-//     }catch(error){
-//         console.log(error)
-//     }
-// }
-
-// export async function getTags(){
-//     try{
-//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/tags",{cache: 'no-store'})
-//         const res = await resp.json();
-//         return res
-//     }catch(error){
-//         console.log(error)
-//     }
-// }
-
-// export async function getCuisines(){
-//     try{
-//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/cuisines",{cache: 'no-store'})
-        
-//         const res = await resp.json();
-//         return res
-//     }catch(error){
-//         console.log(error)
-//     }
-// }
-
-// export async function getDifficulties(){
-//     try{
-//         const resp = await fetch(process.env.BACKEND_BASE_URL+"/api/Recipe/difficulties",{cache: 'no-store'})
-//         const res = await resp.json();
-//         return res
-//     }catch(error){
-//         console.log(error)
-//     }
-// }
-
-export async function POSTNewRecipe(recipe){
+export async function POSTNewRecipe(recipe:Recipe){
     try{
     const token = await getTokenFromCookie()
     const resp = await fetch(
@@ -65,7 +25,7 @@ export async function POSTNewRecipe(recipe){
     }
 }
 
-export async function POSTDescriptionImage(image){
+export async function POSTDescriptionImage(image:Description_Image){
     try{
         const token = await getTokenFromCookie()
         const resp = await fetch(
@@ -86,7 +46,7 @@ export async function POSTDescriptionImage(image){
     }
 }
 
-export async function POSTInstructionImage(image){
+export async function POSTInstructionImage(image:Instruction_Image){
     try{
         const token = await getTokenFromCookie()
         const resp = await fetch(
@@ -107,7 +67,7 @@ export async function POSTInstructionImage(image){
     }
 }
 
-export async function PUTRecipe(recipe){
+export async function PUTRecipe(recipe:Recipe){
     try{
         const token = await getTokenFromCookie()
         const resp  =await fetch(
@@ -130,7 +90,7 @@ export async function PUTRecipe(recipe){
     }
 }
 
-export async function GETRecipe(uuid){
+export async function GETRecipe(uuid:string){
     try{
         const token =await getTokenFromCookie()
         if(token){
@@ -185,7 +145,7 @@ export async function GETUserRecipes(){
     }
 }
 
-export async function DELETEDescriptionImage(recipeUUID){
+export async function DELETEDescriptionImage(recipeUUID:string){
     try{
         const token = await getTokenFromCookie()
         
@@ -206,7 +166,7 @@ export async function DELETEDescriptionImage(recipeUUID){
     }
 }
 
-export async function POSTUploadUpdatedRecipeImage(image){
+export async function POSTUploadUpdatedRecipeImage(image:Description_Image){
     try{
         const token = await getTokenFromCookie()
         const resp = await fetch(
@@ -227,7 +187,7 @@ export async function POSTUploadUpdatedRecipeImage(image){
     }
 }
 
-export async function POSTUpdatedDescriptionImage(image){
+export async function POSTUpdatedDescriptionImage(image:Description_Image){
     try{
         const token = await getTokenFromCookie()
         console.log("descImage: "+JSON.stringify(image))
@@ -250,7 +210,7 @@ export async function POSTUpdatedDescriptionImage(image){
     }
 }
 
-export async function DELETERecipe(recipeUUID){
+export async function DELETERecipe(recipeUUID:string){
     try{
         const token = await getTokenFromCookie()
 
@@ -271,7 +231,7 @@ export async function DELETERecipe(recipeUUID){
     }
 }
 
-export async function DELETEUnusedImages(imgUrls){
+export async function DELETEUnusedImages(imgUrls:string[]|FormDataEntryValue[]){
     try{
         const token = await getTokenFromCookie()
         console.log(imgUrls)

@@ -42,7 +42,7 @@ export async function putRefreshTokenIntoCookie(refreshToken: any){
 export async function validateToken(){
 
     const tokenCheck = await checkToken()
-    if(tokenCheck.error){
+    if(tokenCheck.status===400){
         return {
             success: false,
             tryRefresh: false

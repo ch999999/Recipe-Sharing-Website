@@ -12,7 +12,7 @@ function SubmitButton(){
 
 
 export default function Form(){
-    const initialState = {errorField:null, message:null, stopSubmitting:false}
+    const initialState = {errorField:null, message:null}
     
     const [state, setState] = useState(initialState)
     function UsernameError(){
@@ -82,7 +82,7 @@ export default function Form(){
         
         <div className="border border-t-0 rounded-md bg-gray-50 p-4 md:p-6 sm:max-w-[508px] lg:w-[55%] mx-auto">
             <p className="italic text-center">Sign up to start creating and sharing recipes</p>
-            <form action= {async(e)=>{setState(await createNewUser(e)); setIsSubmitting(false) }}>
+            <form action= {async(e)=>{const newState=await createNewUser(e); setState(newState);}}>
             <div className="form-control w-full">
             <label className="label" htmlFor="username">
                 <span className="label-text">Username<span className="text-red-500">*</span></span>

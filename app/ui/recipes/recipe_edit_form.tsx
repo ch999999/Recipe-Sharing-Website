@@ -1,5 +1,4 @@
 'use client'
-import { useFormState } from "react-dom"
 import { useRef } from "react"
 import { useState } from "react"
 import { updateRecipe } from "@/app/lib/actions"
@@ -8,6 +7,36 @@ import ValidateImage from "@/app/lib/validators/ImageValidator";
 import {ArrowUpIcon} from "@heroicons/react/24/outline"
 import {ArrowDownIcon} from "@heroicons/react/24/outline"
 import { useFormStatus } from "react-dom"
+import { Description_Image, FormError, Ingredient, Instruction, Note, Recipe } from "@/app/lib/definitions"
+
+type InstructionFormData = { 
+    id: number, 
+    order: number, 
+    description?: string, 
+    imageFileName?: string, 
+    fileChosen?: boolean, 
+    imageButtonText?: string, 
+    imageErrorText?: string, 
+    existingImageFileName?: string, 
+    existingImageUrl?: string
+}
+
+type InstructionImageFormData = {
+    filename?:string,
+    url?:string
+}
+
+type ImageFormData = {
+    id:number, 
+    filename?: string, 
+    url?: string
+}
+
+type NoteFormData = {
+    id:number,
+    order:number,
+    description:string
+}
 
 let ingredientCount=0
 let instructionCount=0
@@ -23,7 +52,7 @@ function jumpTo(element:HTMLElement|null){
     element?.focus()
 }
 
-function scrollToError(error){
+function scrollToError(error:FormError){
     if(error===null){
         return
     }
@@ -59,12 +88,12 @@ function SubmitButton(){
     return <button className="btn btn-md min-w-24 bg-green-400">{status.pending ? (<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"><animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/></path></svg>):(<span>Update</span>)}</button>  
 }
 
-export default function RecipeEditPage({recipeData}){
+export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, recipe_description_media:Description_Image}}){
     let initialSetting = "none"
-    let initialDescriptionImage = {}
+    let initialDescriptionImage:Description_Image = {}
 
-    let initialInstructionImageSettings = []
-    let initialInstructionImages = []
+    let initialInstructionImageSettings:string[] = []
+    let initialInstructionImages:InstructionImageFormData[] = []
 
     const [showTitleTooltip, setShowTitleTooltip] = useState(false)
     const [showDescriptionTooltip, setShowDescriptionTooltip] = useState(false)
@@ -87,68 +116,90 @@ export default function RecipeEditPage({recipeData}){
     const oriServings = oriRecipe.servings
 
     const oriIngredients = oriRecipe.ingredients
-    function compareIngredientsBySequence(a,b){
+    function compareIngredientsBySequence(a:Ingredient,b:Ingredient){
         return a.ingredient_Number - b.ingredient_Number
     }
+    
+    const oriIngredientsList:{id:number, order:number, description:string}[] = []
+    if(oriIngredients){
     oriIngredients.sort(compareIngredientsBySequence)
-    const oriIngredientsList = []
+    
     //remove fields not to be stored in React state
     oriIngredients.forEach(ingredient => {
         oriIngredientsList.push({id:ingredientCount,order:ingredient.ingredient_Number, description:ingredient.description})
         ingredientCount++
     });
+    }
 
     const oriInstructions = oriRecipe.instructions
-    function compareInstructionsBySequence(a,b){
+    function compareInstructionsBySequence(a:Instruction,b:Instruction){
         return a.sequence_Number - b.sequence_Number
     }
+
+    const oriInstructionsList:InstructionFormData[] = []
+    if(oriInstructions){
     oriInstructions.sort(compareInstructionsBySequence)
-    const oriInstructionsList = []
+    
     oriInstructions.forEach(instruction => {
-        if(instruction.images.length>0){
-            initialInstructionImageSettings.push("existing")       
-            initialInstructionImages.push({filename:instruction.images[0].filename, url:instruction.images[0].url})
-            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Repick Image", imageErrorText: "", existingImageFileName: instruction.images[0].filename, existingImageUrl: instruction.images[0].url})
-            instructionCount++
-        }else{
+        if(!instruction.images||instruction.images.length<=0){
             initialInstructionImageSettings.push("none")
             initialInstructionImages.push({filename:"", url:"nil"})
             oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image", imageErrorText: "", existingImageFileName: "", existingImageUrl: ""})
             instructionCount++
+        }else{
+        
+            initialInstructionImageSettings.push("existing")       
+            initialInstructionImages.push({filename:instruction.images[0].filename, url:instruction.images[0].url})
+            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Repick Image", imageErrorText: "", existingImageFileName: instruction.images[0].filename, existingImageUrl: instruction.images[0].url})
+            instructionCount++
         }
     });
     console.log(JSON.stringify(initialInstructionImages))
-
+    }
 
     const oriNotes = oriRecipe.notes
-    function compareNotesBySequence(a,b){
+    function compareNotesBySequence(a:Note,b:Note){
         return a.note_Number - b.note_Number
     }
+
+    const oriNotesList:NoteFormData[] = []
+    if(oriNotes){
     oriNotes.sort(compareNotesBySequence)
-    const oriNotesList = []
+    
     //remove fields not to be stored in React state
     oriNotes.forEach(note => {
         notesCount++
         oriNotesList.push({id:notesCount,order:note.note_Number, description:note.description})
     });
+    }
 
-    const oriImageList = []
+    const oriImageList:ImageFormData[] = []
     if(oriDescriptionMedia){
         initialSetting="existing"
         initialDescriptionImage = oriDescriptionMedia
         imagesCount++
         oriImageList.push({id:imagesCount, filename: oriDescriptionMedia.filename, url: oriDescriptionMedia.url})
     }
+
+    if(oriInstructions){
     oriInstructions.forEach(instruction => {
+        if(!instruction.images){
+
+        }else{
         if(instruction.images.length>0){
             imagesCount++
             oriImageList.push({id:imagesCount, filename:instruction.images[0].filename, url: instruction.images[0].url})
         }
+        }
     });
+    }
 
-    function ValidateDescriptionImage(file){
+    function ValidateDescriptionImage(file:File){
         const error = ValidateImage(file)
         if(error){
+            if(!descriptionImageRef||!descriptionImageRef.current){
+                return
+            }
             descriptionImageRef.current.files=null;
             setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
             setDescriptionImageError(error.message)
@@ -168,15 +219,15 @@ export default function RecipeEditPage({recipeData}){
     }
 
     function resetPrepTime(){
-        setPrepTime(oriPrepTime)
+        setPrepTime(oriPrepTime.toString())
     }
 
     function resetCookTime(){
-        setCookTime(oriCookTime)
+        setCookTime(oriCookTime.toString())
     }
 
     function resetServings(){
-        setServings(oriServings)
+        setServings(oriServings.toString())
     }
 
     function addIngredient(){
@@ -191,7 +242,7 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(oriIngredientsList)
     }
 
-    function removeIngredient(id){
+    function removeIngredient(id:number){
         const copy = [...ingredients]
         const afterRemovedIngredient = copy.filter(i=>
             i.id!=id
@@ -213,11 +264,11 @@ export default function RecipeEditPage({recipeData}){
         instructionCount++;
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: "", existingImageUrl: ""}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: "", existingImageUrl: "",imageErrorText:""}
         ])
     }
 
-    function removeInstruction(id){
+    function removeInstruction(id:number){
         const copy = [...instructions]
         const afterRemovedInstruction = copy.filter(i=>
             i.id!=id
@@ -230,11 +281,14 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(afterRemovedInstruction)
     }
 
-    function removeInstructionImageFile(id){
+    function removeInstructionImageFile(id:number){
         const map = getMap();
         const node = map.get(id);
+        if(!node){
+            return
+        }
         node.files = null;
-        const nextInstructions = instructions.map(i=>{
+        const nextInstructions:InstructionFormData[] = instructions.map(i=>{
             if(i.id===id){
                 return{
                     ...i,
@@ -261,7 +315,7 @@ export default function RecipeEditPage({recipeData}){
         notesCount++;
     }
 
-    function addNoteBelow(Id){
+    function addNoteBelow(Id:number){
         const indexToAddBelow = notes.findIndex(({id})=>id===Id)
         notesCount++
         const nextNotes = [...notes.slice(0, indexToAddBelow+1),
@@ -274,12 +328,18 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function moveNoteDown(Id){
+    function moveNoteDown(Id:number){
         const noteToMoveDown = notes.find(({id})=>id===Id)
+        if(!noteToMoveDown){
+            return
+        }
         if(noteToMoveDown.order>=notes.length){
             return
         }
         const noteBelow = notes.find(({order})=>order===noteToMoveDown.order+1)
+        if(!noteBelow){
+            return
+        }
         const nextNotes = [...notes]
         nextNotes[noteToMoveDown.order-1] = noteBelow
         nextNotes[noteBelow.order-1] = noteToMoveDown
@@ -289,12 +349,18 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function moveNoteUp(Id){
+    function moveNoteUp(Id:number){
         const noteToMoveUp = notes.find(({id})=>id===Id)
+        if(!noteToMoveUp){
+            return
+        }
         if(noteToMoveUp.order<=1){
             return
         }
         const noteAbove = notes.find(({order})=>order===noteToMoveUp.order-1)
+        if(!noteAbove){
+            return
+        }
         const nextNotes = [...notes]
         nextNotes[noteToMoveUp.order-1] = noteAbove
         nextNotes[noteAbove.order-1] = noteToMoveUp
@@ -304,7 +370,7 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function removeNote(id){
+    function removeNote(id:number){
         const copy = [...notes]
         const nextNotes = copy.filter(i=>
             i.id!=id
@@ -316,18 +382,7 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    // function updateInstructionUrl(id, imageIndex){
-    //     const urlMap = getUrlMap();
-    //     const node = urlMap.get(id);
-    //     node.value = oriImageList[imageIndex].url
-
-    //     const instrImageMiniMap = getInstrImageMiniMap();
-    //     const miniImageNode = instrImageMiniMap.get(id);
-    //     miniImageNode.src = oriImageList[imageIndex].url
-    //     console.log("node: "+node)
-    //     console.log("node value "+node.value)
-    // }
-    function updateInstructionUrl(Id, imageIndex){
+    function updateInstructionUrl(Id:number, imageIndex:number){
         const nextInstructions = instructions.map(i=>{
             if(i.id===Id){
                 return{
@@ -341,28 +396,39 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function showPopupImage(id){
+    function showPopupImage(id:number){
         console.log("hi")
         const map = getInstrImagePopupMap()
         const node = map.get(id)
+        if(!node){
+            return
+        }
         node.style.display = "inline"
     }
 
-    function hidePopupImage(id){
+    function hidePopupImage(id:number){
         const map = getInstrImagePopupMap()
         const node = map.get(id)
+        if(!node){
+            return
+        }
         node.style.display = "none"
     }
 
-    function updateInstructionImage(id){
+    function updateInstructionImage(id:number){
         const map = getMap();
         const node = map.get(id);
-        let nextInstructions;
+        if(!node||!node.files){
+            return
+        }
         const error = ValidateImage(node.files[0])
 
         if(!error){
-         nextInstructions = instructions.map(i=>{
+         const nextInstructions:InstructionFormData[] = instructions.map(i=>{
             if(i.id === id){
+                if(!node.files){
+                    return i
+                }
                 return{
                     ...i,
                     imageFileName: node.files[0].name,
@@ -374,8 +440,9 @@ export default function RecipeEditPage({recipeData}){
                 return i
             }
         })
+        setInstructions(nextInstructions)
         }else{
-            nextInstructions = instructions.map(i=>{
+            const nextInstructions:InstructionFormData[] = instructions.map(i=>{
                 if(i.id===id){
                     return{
                         ...i,
@@ -388,12 +455,13 @@ export default function RecipeEditPage({recipeData}){
                     return i
                 }
             })
+            setInstructions(nextInstructions)
         }
 
-        setInstructions(nextInstructions)
+        
     }
 
-    function addIngredientBelow(Id){
+    function addIngredientBelow(Id:number){
         const indexToAddBelow = ingredients.findIndex(({id})=>id===Id)
         ingredientCount++
         const nextIngredients = [...ingredients.slice(0, indexToAddBelow+1),
@@ -408,12 +476,18 @@ export default function RecipeEditPage({recipeData}){
 
     }
 
-    function moveIngredientUp(Id){
+    function moveIngredientUp(Id:number){
         const ingredientToMoveUp = ingredients.find(({id})=>id===Id)
+        if(!ingredientToMoveUp){
+            return
+        }
         if(ingredientToMoveUp.order<=1){
             return
         }
         const ingredientAbove = ingredients.find(({order})=>order===ingredientToMoveUp.order-1)
+        if(!ingredientAbove){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveUp.order-1] = ingredientAbove
         nextIngredients[ingredientAbove.order-1] = ingredientToMoveUp
@@ -424,12 +498,18 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(nextIngredients)
     }
 
-    function moveIngredientDown(Id){
+    function moveIngredientDown(Id:number){
         const ingredientToMoveDown = ingredients.find(({id})=>id===Id)
+        if(!ingredientToMoveDown){
+            return
+        }
         if(ingredientToMoveDown.order>=ingredients.length){
             return
         }
         const ingredientBelow = ingredients.find(({order})=>order===ingredientToMoveDown.order+1)
+        if(!ingredientBelow){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveDown.order-1] = ingredientBelow
         nextIngredients[ingredientBelow.order-1] = ingredientToMoveDown
@@ -440,7 +520,7 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(nextIngredients)
     }
 
-    function addInstructionBelow(Id){
+    function addInstructionBelow(Id:number){
         const indexToAddBelow = instructions.findIndex(({id})=>id===Id)
         instructionCount++
         const nextInstructions = [...instructions.slice(0, indexToAddBelow+1),
@@ -454,12 +534,18 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionUp(Id){
+    function moveInstructionUp(Id:number){
         const instructionToMoveUp = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveUp){
+            return
+        }
         if(instructionToMoveUp.order<=1){
             return
         }
         const instructionAbove = instructions.find(({order})=>order===instructionToMoveUp.order-1)
+        if(!instructionAbove){
+            return
+        }
         const nextInstructions = [...instructions]
         nextInstructions[instructionToMoveUp.order-1] = instructionAbove
         nextInstructions[instructionAbove.order-1] = instructionToMoveUp
@@ -470,12 +556,18 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionDown(Id){
+    function moveInstructionDown(Id:number){
         const instructionToMoveDown = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveDown){
+            return
+        }
         if(instructionToMoveDown.order>=instructions.length){
             return
         }
         const instructionBelow = instructions.find(({order})=>order===instructionToMoveDown.order+1)
+        if(!instructionBelow){
+            return
+        }
         const nextInstructions = [...instructions]
         nextInstructions[instructionToMoveDown.order-1] = instructionBelow
         nextInstructions[instructionBelow.order-1] = instructionToMoveDown
@@ -488,23 +580,23 @@ export default function RecipeEditPage({recipeData}){
 
     const initialState = {errorField:null, message:null, index:null}
     //const [state,dispatch] = useFormState(updateRecipe, initialState)
-    const [state, setState] = useState(initialState)
+    const [state, setState] = useState<FormError>(initialState)
     const [existingDescriptionImage, setExistingDescriptionImage] = useState(initialDescriptionImage)
     const [existingDescriptionImageUrl, setExistingDescriptionImageUrl] = useState(initialDescriptionImage.url)
 
-    const descriptionImageRef = useRef(null)
-    const instructionImagesRef = useRef(null)
-    const instructionUrlsRef = useRef(null)
-    const instructionImagesMiniRef = useRef(null)
-    const instructionImagesPopupRef = useRef(null)
+    const descriptionImageRef = useRef<HTMLInputElement>(null)
+    const instructionImagesRef = useRef<Map<number, HTMLInputElement>|null>(null)
+    const instructionUrlsRef = useRef<Map<number,HTMLInputElement>|null>(null)
+    const instructionImagesMiniRef = useRef<Map<number, HTMLImageElement>|null>(null)
+    const instructionImagesPopupRef = useRef<Map<number, HTMLElement>|null>(null)
     const selectImagesRef = useRef(null)
     
 
     const [title, setTitle] = useState(oriTitle)
     const [description, setDescription] = useState(oriDescription)
-    const [prepTime, setPrepTime] = useState(oriPrepTime)
-    const [cookTime, setCookTime] = useState(oriCookTime)
-    const [servings, setServings] = useState(oriServings)
+    const [prepTime, setPrepTime] = useState(oriPrepTime.toString())
+    const [cookTime, setCookTime] = useState(oriCookTime.toString())
+    const [servings, setServings] = useState(oriServings.toString())
 
     const [descriptionImageError, setDescriptionImageError]=useState("")
     const [descriptionImage, setDescriptionImage] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
@@ -552,8 +644,8 @@ export default function RecipeEditPage({recipeData}){
                                     
                                     <div>
                                         <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="input w-[510px] hidden" name="instruction-image-url" value={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></input>
-                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
-                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
+                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniNode){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
+                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupNode){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
                                         <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
                                         <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></img>
                                         </div>
@@ -626,8 +718,8 @@ export default function RecipeEditPage({recipeData}){
                                     
                                     <div>
                                         <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="input w-[510px] hidden" name="instruction-image-url" value={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></input>
-                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
-                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
+                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniNode){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
+                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupNode){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
                                         <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
                                         <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></img>
                                         </div>
@@ -770,41 +862,31 @@ export default function RecipeEditPage({recipeData}){
             return instructionImagesPopupRef.current
         }
 
-        function getMap(){
+        function getMap():Map<number,HTMLInputElement>{
             if(!instructionImagesRef.current){
                  instructionImagesRef.current = new Map()
             }
             return instructionImagesRef.current
         }
 
-        function getInstrImageMiniMap(){
+        function getInstrImageMiniMap():Map<number,HTMLImageElement>{
             if(!instructionImagesMiniRef.current){
                 instructionImagesMiniRef.current = new Map()
             }
             return instructionImagesMiniRef.current
         }
 
-        function getUrlMap(){
+        function getUrlMap():Map<number, HTMLInputElement>{
             if(!instructionUrlsRef.current){
                 instructionUrlsRef.current = new Map()
             }
             return instructionUrlsRef.current
         }
 
-        function getSelectMap(){
-            if(!selectImagesRef.current){
-                selectImagesRef.current = new Map()
-            }
-            return selectImagesRef.current
-        }
-
-        function getInstrImageMap(){
-            
-        }
 
     return(
         <>
-            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); setState(newState); scrollToError(newState)}}>
+            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
                 <div className="hidden">
                     <ol>
@@ -883,10 +965,10 @@ export default function RecipeEditPage({recipeData}){
                                 <div className="mb-1 flex flex-col sm:flex-row">
                                 <label className="ml-2 mr-5 sm:mt-2" htmlFor="description-image-new">Choose from device: </label>
                                 <div className="flex flex-row">
-                                <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
+                                <input ref={descriptionImageRef} onChange={e=>{if(!descriptionImageRef.current||!descriptionImageRef.current.files){return} setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
                                 <label htmlFor="description-image" className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
                                 <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
-                                {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
+                                {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{if(!descriptionImageRef.current){return} descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
                                 </div>
                                 {descriptionImageError!=="" && <p className="mt-2 ml-1 text-sm text-red-500">{descriptionImageError}</p>}
                                 </div>

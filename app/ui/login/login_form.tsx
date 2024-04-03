@@ -13,11 +13,10 @@ function SubmitButton(){
 
 export default function Form(){
     const searchParams = useSearchParams()
-    const nextPage = searchParams.get('next')
+    let nextPage = searchParams.get('next')
     
     const initialState = {errorField:null, message:null}
     const [state, setState] = useState(initialState)
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
     function IdentifierError(){
         if(state!=null && state.errorField=="identifier"){
@@ -46,7 +45,7 @@ export default function Form(){
         <>
         <div className="border border-t-0 rounded-md bg-gray-50 p-4 md:p-6 sm:max-w-[508px] lg:w-[55%] mx-auto">
             <p className="italic text-center">Sign in to create recipes and access private recipes</p>
-            <form action={async(e)=>{setState(await userLogin(e, nextPage)); setIsSubmitting(false)}}>
+            <form action={async(e)=>{if(nextPage===null){nextPage=""} setState(await userLogin(e, nextPage))}}>
             <div className="form-control w-full">
             <label className="label" htmlFor="identifier">
                 <span className="label-text">Username/Email</span>
@@ -78,8 +77,6 @@ export default function Form(){
         </div>
 
         <div className="form-control w-full mt-4">
-            
-        {/* <button onClick={()=>{setIsSubmitting(true);}} className="btn btn-md">{isSubmitting ? (<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"><animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/></path></svg>):(<span>Login</span>)}</button> */}
         <SubmitButton></SubmitButton>
         </div>
         </form>

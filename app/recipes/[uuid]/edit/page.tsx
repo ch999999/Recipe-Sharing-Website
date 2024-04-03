@@ -1,5 +1,4 @@
 import { GETRecipe } from "@/app/api/recipes";
-import { notFound } from "next/navigation";
 import RecipeEditPage from "@/app/ui/recipes/recipe_edit_form";
 import { validateToken } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
@@ -29,14 +28,14 @@ export default async function Page({params}:{params:{uuid:string}}){
     if(tokenIsValid.success===true){
     const recipeResp = await GETRecipe(uuid)
     const recipeData = await recipeResp?.json()
-
-    if(recipeResp.status===401&&recipeData.error==="You need to be signed in to access this resource"){
+    
+    if(recipeResp?.status===401&&recipeData.error==="You need to be signed in to access this resource"){
         return <PrivateRecipeError></PrivateRecipeError>
     }
-    if(recipeResp.status===401&&recipeData.error==="You do not have permission to access this resource"){
+    if(recipeResp?.status===401&&recipeData.error==="You do not have permission to access this resource"){
         return <PrivateRecipeError></PrivateRecipeError>
     }
-    if(recipeResp.status===404||recipeResp.status===400){
+    if(recipeResp?.status===404||recipeResp?.status===400){
         return <NonexistantRecipeError></NonexistantRecipeError>
     }
 
