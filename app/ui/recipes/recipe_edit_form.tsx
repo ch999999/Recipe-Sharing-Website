@@ -1,5 +1,4 @@
 'use client'
-import { useFormState } from "react-dom"
 import { useRef } from "react"
 import { useState } from "react"
 import { updateRecipe } from "@/app/lib/actions"
@@ -8,6 +7,36 @@ import ValidateImage from "@/app/lib/validators/ImageValidator";
 import {ArrowUpIcon} from "@heroicons/react/24/outline"
 import {ArrowDownIcon} from "@heroicons/react/24/outline"
 import { useFormStatus } from "react-dom"
+import { Description_Image, FormError, Ingredient, Instruction, Note, Recipe } from "@/app/lib/definitions"
+
+type InstructionFormData = { 
+    id: number, 
+    order: number, 
+    description?: string, 
+    imageFileName?: string, 
+    fileChosen?: boolean, 
+    imageButtonText?: string, 
+    imageErrorText?: string, 
+    existingImageFileName?: string, 
+    existingImageUrl?: string
+}
+
+type InstructionImageFormData = {
+    filename?:string,
+    url?:string
+}
+
+type ImageFormData = {
+    id:number, 
+    filename?: string, 
+    url?: string
+}
+
+type NoteFormData = {
+    id:number,
+    order:number,
+    description:string
+}
 
 let ingredientCount=0
 let instructionCount=0
@@ -23,7 +52,7 @@ function jumpTo(element:HTMLElement|null){
     element?.focus()
 }
 
-function scrollToError(error){
+function scrollToError(error:FormError){
     if(error===null){
         return
     }
@@ -59,12 +88,12 @@ function SubmitButton(){
     return <button className="btn btn-md min-w-24 bg-green-400">{status.pending ? (<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"><animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/></path></svg>):(<span>Update</span>)}</button>  
 }
 
-export default function RecipeEditPage({recipeData}){
+export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, recipe_description_media:Description_Image}}){
     let initialSetting = "none"
-    let initialDescriptionImage = {}
+    let initialDescriptionImage:Description_Image = {}
 
-    let initialInstructionImageSettings = []
-    let initialInstructionImages = []
+    let initialInstructionImageSettings:string[] = []
+    let initialInstructionImages:InstructionImageFormData[] = []
 
     const [showTitleTooltip, setShowTitleTooltip] = useState(false)
     const [showDescriptionTooltip, setShowDescriptionTooltip] = useState(false)
@@ -87,68 +116,88 @@ export default function RecipeEditPage({recipeData}){
     const oriServings = oriRecipe.servings
 
     const oriIngredients = oriRecipe.ingredients
-    function compareIngredientsBySequence(a,b){
+    function compareIngredientsBySequence(a:Ingredient,b:Ingredient){
         return a.ingredient_Number - b.ingredient_Number
     }
+    
+    const oriIngredientsList:{id:number, order:number, description:string}[] = []
+    if(oriIngredients){
     oriIngredients.sort(compareIngredientsBySequence)
-    const oriIngredientsList = []
+    
     //remove fields not to be stored in React state
     oriIngredients.forEach(ingredient => {
         oriIngredientsList.push({id:ingredientCount,order:ingredient.ingredient_Number, description:ingredient.description})
         ingredientCount++
     });
+    }
 
     const oriInstructions = oriRecipe.instructions
-    function compareInstructionsBySequence(a,b){
+    function compareInstructionsBySequence(a:Instruction,b:Instruction){
         return a.sequence_Number - b.sequence_Number
     }
+
+    const oriInstructionsList:InstructionFormData[] = []
+    if(oriInstructions){
     oriInstructions.sort(compareInstructionsBySequence)
-    const oriInstructionsList = []
+    
     oriInstructions.forEach(instruction => {
-        if(instruction.images.length>0){
-            initialInstructionImageSettings.push("existing")       
-            initialInstructionImages.push({filename:instruction.images[0].filename, url:instruction.images[0].url})
-            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Repick Image", imageErrorText: "", existingImageFileName: instruction.images[0].filename, existingImageUrl: instruction.images[0].url})
-            instructionCount++
-        }else{
+        if(!instruction.images||instruction.images.length<=0){
             initialInstructionImageSettings.push("none")
             initialInstructionImages.push({filename:"", url:"nil"})
             oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image", imageErrorText: "", existingImageFileName: "", existingImageUrl: ""})
             instructionCount++
+        }else{
+            initialInstructionImageSettings.push("existing")       
+            initialInstructionImages.push({filename:instruction.images[0].filename, url:instruction.images[0].url})
+            oriInstructionsList.push({id:instructionCount,order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Repick Image", imageErrorText: "", existingImageFileName: instruction.images[0].filename, existingImageUrl: instruction.images[0].url})
+            instructionCount++
         }
     });
-    console.log(JSON.stringify(initialInstructionImages))
-
+    }
 
     const oriNotes = oriRecipe.notes
-    function compareNotesBySequence(a,b){
+    function compareNotesBySequence(a:Note,b:Note){
         return a.note_Number - b.note_Number
     }
+
+    const oriNotesList:NoteFormData[] = []
+    if(oriNotes){
     oriNotes.sort(compareNotesBySequence)
-    const oriNotesList = []
+    
     //remove fields not to be stored in React state
     oriNotes.forEach(note => {
         notesCount++
         oriNotesList.push({id:notesCount,order:note.note_Number, description:note.description})
     });
+    }
 
-    const oriImageList = []
+    const oriImageList:ImageFormData[] = []
     if(oriDescriptionMedia){
         initialSetting="existing"
         initialDescriptionImage = oriDescriptionMedia
         imagesCount++
         oriImageList.push({id:imagesCount, filename: oriDescriptionMedia.filename, url: oriDescriptionMedia.url})
     }
+
+    if(oriInstructions){
     oriInstructions.forEach(instruction => {
+        if(!instruction.images){
+
+        }else{
         if(instruction.images.length>0){
             imagesCount++
             oriImageList.push({id:imagesCount, filename:instruction.images[0].filename, url: instruction.images[0].url})
         }
+        }
     });
+    }
 
-    function ValidateDescriptionImage(file){
+    function validateDescriptionImage(file:File){
         const error = ValidateImage(file)
         if(error){
+            if(!descriptionImageRef||!descriptionImageRef.current){
+                return
+            }
             descriptionImageRef.current.files=null;
             setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
             setDescriptionImageError(error.message)
@@ -168,15 +217,15 @@ export default function RecipeEditPage({recipeData}){
     }
 
     function resetPrepTime(){
-        setPrepTime(oriPrepTime)
+        setPrepTime(oriPrepTime.toString())
     }
 
     function resetCookTime(){
-        setCookTime(oriCookTime)
+        setCookTime(oriCookTime.toString())
     }
 
     function resetServings(){
-        setServings(oriServings)
+        setServings(oriServings.toString())
     }
 
     function addIngredient(){
@@ -191,7 +240,7 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(oriIngredientsList)
     }
 
-    function removeIngredient(id){
+    function removeIngredient(id:number){
         const copy = [...ingredients]
         const afterRemovedIngredient = copy.filter(i=>
             i.id!=id
@@ -213,16 +262,13 @@ export default function RecipeEditPage({recipeData}){
         instructionCount++;
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: "", existingImageUrl: ""}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: "", existingImageUrl: "",imageErrorText:""}
         ])
     }
 
-    function removeInstruction(id){
+    function removeInstruction(id:number){
         const copy = [...instructions]
-        const afterRemovedInstruction = copy.filter(i=>
-            i.id!=id
-            )
-        
+        const afterRemovedInstruction = copy.filter(i=>i.id!=id)
             //reorder based on array index
             for(let j=0; j<afterRemovedInstruction.length; j++){
                 afterRemovedInstruction[j].order = j+1
@@ -230,11 +276,14 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(afterRemovedInstruction)
     }
 
-    function removeInstructionImageFile(id){
-        const map = getMap();
+    function removeInstructionImageFile(id:number){
+        const map = getInstructionImageInputMap();
         const node = map.get(id);
+        if(!node){
+            return
+        }
         node.files = null;
-        const nextInstructions = instructions.map(i=>{
+        const nextInstructions:InstructionFormData[] = instructions.map(i=>{
             if(i.id===id){
                 return{
                     ...i,
@@ -261,7 +310,7 @@ export default function RecipeEditPage({recipeData}){
         notesCount++;
     }
 
-    function addNoteBelow(Id){
+    function addNoteBelow(Id:number){
         const indexToAddBelow = notes.findIndex(({id})=>id===Id)
         notesCount++
         const nextNotes = [...notes.slice(0, indexToAddBelow+1),
@@ -274,12 +323,18 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function moveNoteDown(Id){
+    function moveNoteDown(Id:number){
         const noteToMoveDown = notes.find(({id})=>id===Id)
+        if(!noteToMoveDown){
+            return
+        }
         if(noteToMoveDown.order>=notes.length){
             return
         }
         const noteBelow = notes.find(({order})=>order===noteToMoveDown.order+1)
+        if(!noteBelow){
+            return
+        }
         const nextNotes = [...notes]
         nextNotes[noteToMoveDown.order-1] = noteBelow
         nextNotes[noteBelow.order-1] = noteToMoveDown
@@ -289,12 +344,18 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function moveNoteUp(Id){
+    function moveNoteUp(Id:number){
         const noteToMoveUp = notes.find(({id})=>id===Id)
+        if(!noteToMoveUp){
+            return
+        }
         if(noteToMoveUp.order<=1){
             return
         }
         const noteAbove = notes.find(({order})=>order===noteToMoveUp.order-1)
+        if(!noteAbove){
+            return
+        }
         const nextNotes = [...notes]
         nextNotes[noteToMoveUp.order-1] = noteAbove
         nextNotes[noteAbove.order-1] = noteToMoveUp
@@ -304,7 +365,7 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    function removeNote(id){
+    function removeNote(id:number){
         const copy = [...notes]
         const nextNotes = copy.filter(i=>
             i.id!=id
@@ -316,18 +377,7 @@ export default function RecipeEditPage({recipeData}){
         setNotes(nextNotes)
     }
 
-    // function updateInstructionUrl(id, imageIndex){
-    //     const urlMap = getUrlMap();
-    //     const node = urlMap.get(id);
-    //     node.value = oriImageList[imageIndex].url
-
-    //     const instrImageMiniMap = getInstrImageMiniMap();
-    //     const miniImageNode = instrImageMiniMap.get(id);
-    //     miniImageNode.src = oriImageList[imageIndex].url
-    //     console.log("node: "+node)
-    //     console.log("node value "+node.value)
-    // }
-    function updateInstructionUrl(Id, imageIndex){
+    function updateInstructionUrl(Id:number, imageIndex:number){
         const nextInstructions = instructions.map(i=>{
             if(i.id===Id){
                 return{
@@ -341,28 +391,38 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function showPopupImage(id){
-        console.log("hi")
+    function showPopupImage(id:number){
         const map = getInstrImagePopupMap()
         const node = map.get(id)
+        if(!node){
+            return
+        }
         node.style.display = "inline"
     }
 
-    function hidePopupImage(id){
+    function hidePopupImage(id:number){
         const map = getInstrImagePopupMap()
         const node = map.get(id)
+        if(!node){
+            return
+        }
         node.style.display = "none"
     }
 
-    function updateInstructionImage(id){
-        const map = getMap();
+    function updateInstructionImage(id:number){
+        const map = getInstructionImageInputMap();
         const node = map.get(id);
-        let nextInstructions;
+        if(!node||!node.files){
+            return
+        }
         const error = ValidateImage(node.files[0])
 
         if(!error){
-         nextInstructions = instructions.map(i=>{
+         const nextInstructions:InstructionFormData[] = instructions.map(i=>{
             if(i.id === id){
+                if(!node.files){
+                    return i
+                }
                 return{
                     ...i,
                     imageFileName: node.files[0].name,
@@ -374,8 +434,9 @@ export default function RecipeEditPage({recipeData}){
                 return i
             }
         })
+        setInstructions(nextInstructions)
         }else{
-            nextInstructions = instructions.map(i=>{
+            const nextInstructions:InstructionFormData[] = instructions.map(i=>{
                 if(i.id===id){
                     return{
                         ...i,
@@ -388,12 +449,11 @@ export default function RecipeEditPage({recipeData}){
                     return i
                 }
             })
+            setInstructions(nextInstructions)
         }
-
-        setInstructions(nextInstructions)
     }
 
-    function addIngredientBelow(Id){
+    function addIngredientBelow(Id:number){
         const indexToAddBelow = ingredients.findIndex(({id})=>id===Id)
         ingredientCount++
         const nextIngredients = [...ingredients.slice(0, indexToAddBelow+1),
@@ -408,12 +468,18 @@ export default function RecipeEditPage({recipeData}){
 
     }
 
-    function moveIngredientUp(Id){
+    function moveIngredientUp(Id:number){
         const ingredientToMoveUp = ingredients.find(({id})=>id===Id)
+        if(!ingredientToMoveUp){
+            return
+        }
         if(ingredientToMoveUp.order<=1){
             return
         }
         const ingredientAbove = ingredients.find(({order})=>order===ingredientToMoveUp.order-1)
+        if(!ingredientAbove){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveUp.order-1] = ingredientAbove
         nextIngredients[ingredientAbove.order-1] = ingredientToMoveUp
@@ -424,12 +490,18 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(nextIngredients)
     }
 
-    function moveIngredientDown(Id){
+    function moveIngredientDown(Id:number){
         const ingredientToMoveDown = ingredients.find(({id})=>id===Id)
+        if(!ingredientToMoveDown){
+            return
+        }
         if(ingredientToMoveDown.order>=ingredients.length){
             return
         }
         const ingredientBelow = ingredients.find(({order})=>order===ingredientToMoveDown.order+1)
+        if(!ingredientBelow){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveDown.order-1] = ingredientBelow
         nextIngredients[ingredientBelow.order-1] = ingredientToMoveDown
@@ -440,7 +512,7 @@ export default function RecipeEditPage({recipeData}){
         setIngredients(nextIngredients)
     }
 
-    function addInstructionBelow(Id){
+    function addInstructionBelow(Id:number){
         const indexToAddBelow = instructions.findIndex(({id})=>id===Id)
         instructionCount++
         const nextInstructions = [...instructions.slice(0, indexToAddBelow+1),
@@ -454,12 +526,18 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionUp(Id){
+    function moveInstructionUp(Id:number){
         const instructionToMoveUp = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveUp){
+            return
+        }
         if(instructionToMoveUp.order<=1){
             return
         }
         const instructionAbove = instructions.find(({order})=>order===instructionToMoveUp.order-1)
+        if(!instructionAbove){
+            return
+        }
         const nextInstructions = [...instructions]
         nextInstructions[instructionToMoveUp.order-1] = instructionAbove
         nextInstructions[instructionAbove.order-1] = instructionToMoveUp
@@ -470,12 +548,18 @@ export default function RecipeEditPage({recipeData}){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionDown(Id){
+    function moveInstructionDown(Id:number){
         const instructionToMoveDown = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveDown){
+            return
+        }
         if(instructionToMoveDown.order>=instructions.length){
             return
         }
         const instructionBelow = instructions.find(({order})=>order===instructionToMoveDown.order+1)
+        if(!instructionBelow){
+            return
+        }
         const nextInstructions = [...instructions]
         nextInstructions[instructionToMoveDown.order-1] = instructionBelow
         nextInstructions[instructionBelow.order-1] = instructionToMoveDown
@@ -487,24 +571,21 @@ export default function RecipeEditPage({recipeData}){
     }
 
     const initialState = {errorField:null, message:null, index:null}
-    //const [state,dispatch] = useFormState(updateRecipe, initialState)
-    const [state, setState] = useState(initialState)
+    const [state, setState] = useState<FormError>(initialState)
     const [existingDescriptionImage, setExistingDescriptionImage] = useState(initialDescriptionImage)
     const [existingDescriptionImageUrl, setExistingDescriptionImageUrl] = useState(initialDescriptionImage.url)
 
-    const descriptionImageRef = useRef(null)
-    const instructionImagesRef = useRef(null)
-    const instructionUrlsRef = useRef(null)
-    const instructionImagesMiniRef = useRef(null)
-    const instructionImagesPopupRef = useRef(null)
-    const selectImagesRef = useRef(null)
-    
+    const descriptionImageRef = useRef<HTMLInputElement>(null)
+    const instructionImagesRef = useRef<Map<number, HTMLInputElement>|null>(null)
+    const instructionUrlsRef = useRef<Map<number,HTMLInputElement>|null>(null)
+    const instructionImagesMiniRef = useRef<Map<number, HTMLImageElement>|null>(null)
+    const instructionImagesPopupRef = useRef<Map<number, HTMLElement>|null>(null)
 
     const [title, setTitle] = useState(oriTitle)
     const [description, setDescription] = useState(oriDescription)
-    const [prepTime, setPrepTime] = useState(oriPrepTime)
-    const [cookTime, setCookTime] = useState(oriCookTime)
-    const [servings, setServings] = useState(oriServings)
+    const [prepTime, setPrepTime] = useState(oriPrepTime.toString())
+    const [cookTime, setCookTime] = useState(oriCookTime.toString())
+    const [servings, setServings] = useState(oriServings.toString())
 
     const [descriptionImageError, setDescriptionImageError]=useState("")
     const [descriptionImage, setDescriptionImage] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
@@ -512,97 +593,16 @@ export default function RecipeEditPage({recipeData}){
     const [instructions, setInstructions] = useState(oriInstructionsList)
     const [notes, setNotes] = useState(oriNotesList)
 
-    const [images, setImages] = useState(oriImageList)
-
-    const imageItems = images.map(i=>
+    const imageItems = oriImageList.map(i=>
         <li className="flex flex-row" key={i.id}>{i.filename+": "}<input name="oriImageUrls" defaultValue={i.url}></input></li>
     )
 
-    const imageSelectItems = images.map(i=>
+    const imageSelectItems = oriImageList.map(i=>
         <option className=" flex flex-row" key={i.id} value={i.filename}>{i.filename}</option>
         )
-    console.log("initialInstructionImages: "+JSON.stringify(initialInstructionImages))
 
     const instructionItems = instructions.map(i=>
-        {if(i.order===1&&instructions.length===1){
-            return(<tbody className=" border border-gray-300" key={i.id}>
-                <tr className=" border border-gray-300">
-                    <td className="border border-gray-300 w-5 align-top"><p className=" text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
-                    <td className="border border-gray-300 md:[w-120%]">
-                        <textarea id={"instruction-input-"+i.order} aria-describedby={"instruction-error"+i.id} className="w-[100%] resize-none p-1 rounded h-20 outline-1 outline-gray-400 md:resize-y" name="instruction-description" placeholder={"Instruction No. "+i.order} defaultValue={i.description}></textarea>     {/*w-264px */}   
-                        {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}                     
-                        {/* <div className="flex flex-row md:mb-1">
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm max-w-[130px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 mb-3 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>} */}
-                        <table className=" table-auto">
-                        <tbody>
-                            {images.length>0&&
-                            <tr>
-                                <td className="align-top"><input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
-                                <td >
-                                    <div className="mb-1 flex flex-col sm:flex-row">
-                                    <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing: </label>
-                                    <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">
-                                    <select name="instruction-image-filename" defaultValue={i.existingImageFileName} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex); console.log("Changed: "+e.target.selectedIndex)}}>
-                                        {imageSelectItems}
-                                    </select>
-                                    
-                                    <div>
-                                        <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="input w-[510px] hidden" name="instruction-image-url" value={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></input>
-                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
-                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
-                                        <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
-                                        <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></img>
-                                        </div>
-                                    </div>
-            
-                                    </div>
-                                    </div>
-                                </td>
-                            </tr>}
-                            <tr>
-                                <td className="align-top"><input className="sm:mt-3" defaultChecked={initialInstructionImageSettings[i.order-1]=="new" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-new-"+i.id} value="new"></input></td>
-                                <td className="">
-                                <div className="mb-1 flex flex-col sm:flex-row">
-                                <label className="ml-2 mr-5 sm:mt-2" htmlFor={"description-image-new-"+i.id}>Choose from device: </label>
-                                <div className="flex flex-row">
-                                <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
-                                <label htmlFor={"instruction-image-"+i.id} className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
-                                <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                                {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                                </div>
-                                {i.imageErrorText!="" && <p className="md:hidden mt-1 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                                </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className=""><input defaultChecked={i.order>initialInstructionImageSettings.length|| initialInstructionImageSettings[i.order-1]=="none" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-none-"+i.id} value="none"></input></td>
-                                <td><label className="ml-2" htmlFor={"instruction-image-none-"+i.id}>None</label></td>
-                            </tr>
-                        </tbody>
-                        </table>
-                        <div className="flex flex-row float-right md:hidden">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                        </div>
-                    </td>
-                    <td className="hidden border border-gray-300 md:table-cell">
-                        <div className="flex flex-row float-right">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>)
-        }else{
-            return(<tbody key={i.id}>
+        <tbody key={i.id}>
                 <tr className="border border-gray-300">
                     <td className="border border-gray-300 align-top"><p className="text-center md:w-5">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                     <td className="border border-gray-300 md:w-[120%]">
@@ -611,28 +611,24 @@ export default function RecipeEditPage({recipeData}){
                         <div>
                         <table className="">
                         <tbody>
-                            {images.length>0&&
+                            {oriImageList.length>0&&
                             <tr>
                                 <td className="align-top"><input defaultChecked={initialInstructionImageSettings[i.order-1]=="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
                                 <td>
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                     <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing: </label>
-                                    <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">
-                                    
-                                    
-                                    <select name="instruction-image-filename" defaultValue={i.existingImageFileName} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex); console.log("Changed: "+e.target.selectedIndex)}}>
+                                    <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">                   
+                                    <select name="instruction-image-filename" defaultValue={i.existingImageFileName} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateInstructionUrl(i.id, e.target.selectedIndex);}}>
                                         {imageSelectItems}
-                                    </select>
-                                    
+                                    </select>            
                                     <div>
-                                        <input ref={(urlNode)=>{const urlMap=getUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="input w-[510px] hidden" name="instruction-image-url" value={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></input>
-                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniMap){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
-                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupMap){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
+                                        <input ref={(urlNode)=>{const urlMap=getInstrImageUrlMap(); if(urlNode){urlMap.set(i.id,urlNode);}else urlMap.delete(i.id)}} className="input w-[510px] hidden" name="instruction-image-url" value={i.existingImageUrl ===""? oriImageList[0].url : i.existingImageUrl}></input>
+                                        <img ref={(instrImageMiniNode)=>{const instrImageMiniMap=getInstrImageMiniMap(); if(instrImageMiniNode){instrImageMiniMap.set(i.id,instrImageMiniNode);}else instrImageMiniMap.delete(i.id)}} className="h-8 w-12" alt="" src={i.existingImageUrl ===""? oriImageList[0].url : i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
+                                         <div ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupNode){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
                                         <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
-                                        <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={i.existingImageUrl ===""? images[0].url : i.existingImageUrl}></img>
+                                        <img alt="" className="-translate-x-44 z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={i.existingImageUrl ===""? oriImageList[0].url : i.existingImageUrl}></img>
                                         </div>
-                                    </div>
-                                        
+                                    </div>                                    
                                     </div>
                                     </div>
                                 </td>
@@ -643,7 +639,7 @@ export default function RecipeEditPage({recipeData}){
                                 <div className="mb-1 flex flex-col sm:flex-row">
                                 <label className="ml-2 mr-5 sm:mt-2" htmlFor={"description-image-new-"+i.id}>Choose from device: </label>
                                 <div className="flex flex-row">
-                                <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                                <input ref={(node)=>{const map=getInstructionImageInputMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
                                 <label htmlFor={"instruction-image-"+i.id} className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
                                 <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
                                 {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
@@ -659,13 +655,10 @@ export default function RecipeEditPage({recipeData}){
                         </tbody>
                         </table>
                         </div>
-                        {/* <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm min-w-[100px] max-w-[100px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>} */}
+                        
                         <div className="flex flex-row float-right md:hidden">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled = {instructions.length===1&&i.order===1?true:false} onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                         </div>
@@ -674,20 +667,16 @@ export default function RecipeEditPage({recipeData}){
                     <td className=" hidden border border-gray-300 md:table-cell">
                     <div className="flex flex-row float-right">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled = {instructions.length===1&&i.order===1?true:false} onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                         </div>
                     </td>
                 </tr>
-            </tbody>)
-        }
-        }
+            </tbody>
         )
 
         const noteItems = notes.map(n=>
-            
-               
                     <tbody className="border border-gray-300" key={n.id}><tr className="border border-gray-300">
                         <td className="border border-gray-300 w-5"><p className="text-center">{n.order}</p></td>
                         <td className="border border-gray-300">
@@ -709,44 +698,18 @@ export default function RecipeEditPage({recipeData}){
                     </div>
                         </td>
 
-                    </tr></tbody>
-                
-            
+                    </tr></tbody>  
             )
 
             const ingredientItems = ingredients.map(i=>
-                {if(i.order===1 && ingredients.length===1){
-        
-                    return  ( <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
-                                <td className="border border-gray-300 min-w-5 align-top"><p className="text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
-                                <td className=" border border-gray-300 md:w-[120%]">
-                                    <textarea id={"ingredient-input-"+i.order} aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 resize-none outline outline-1 outline-gray-400" name="ingredient-description" placeholder={"Ingredient No. "+i.order} defaultValue={i.description}></textarea>{/*w-264px */}
-                                    {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className=" text-sm text-red-500">{state.message}</p></div>}
-                                    <div className="flex flex-row float-right md:hidden">
-                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                        <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
-                                        <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                                    </div>
-                                </td>
-                                <td className="hidden border border-gray-300 md:table-cell">
-                                    <div className="flex flex-row items-center">
-                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                        <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
-                                        <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                        <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                                    </div> 
-                                </td>
-                            </tr></tbody>)
-                }else{
-                    return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
+                <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
                                 <td className="border border-gray-300 align-top"><p className="md:w-5 text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                                 <td className=" border border-gray-300 md:w-[120%]">
                                     <textarea id={"ingredient-input-"+i.order} aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none outline outline-1 outline-gray-400 md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order} defaultValue={i.description}></textarea>
                                     {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className=" text-sm text-red-500">{state.message}</p></div>}
                                     <div className="flex flex-row float-right md:hidden">
                                         <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" disabled={ingredients.length===1 && i.order===1?true:false} type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                         <button className="btn-sm mr-2" type="button" onClick={() => moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                         <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                                     </div>
@@ -754,13 +717,12 @@ export default function RecipeEditPage({recipeData}){
                                 <td className="hidden border border-gray-300 md:table-cell">
                                     <div className="flex flex-row items-center">
                                         <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                        <button className="btn-sm -mt-1 mr-2" type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                        <button className="btn-sm -mt-1 mr-2" disabled={ingredients.length===1 && i.order===1?true:false} type="button" onClick={() => removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                         <button className="btn-sm mr-2" type="button" onClick={() => moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                         <button className="btn-sm" type="button" onClick={() => moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                                     </div>
                                 </td>
-                    </tr></tbody>)
-                }}
+                    </tr></tbody>
                 )
 
         function getInstrImagePopupMap(){
@@ -770,41 +732,31 @@ export default function RecipeEditPage({recipeData}){
             return instructionImagesPopupRef.current
         }
 
-        function getMap(){
+        function getInstructionImageInputMap():Map<number,HTMLInputElement>{
             if(!instructionImagesRef.current){
                  instructionImagesRef.current = new Map()
             }
             return instructionImagesRef.current
         }
 
-        function getInstrImageMiniMap(){
+        function getInstrImageMiniMap():Map<number,HTMLImageElement>{
             if(!instructionImagesMiniRef.current){
                 instructionImagesMiniRef.current = new Map()
             }
             return instructionImagesMiniRef.current
         }
 
-        function getUrlMap(){
+        function getInstrImageUrlMap():Map<number, HTMLInputElement>{
             if(!instructionUrlsRef.current){
                 instructionUrlsRef.current = new Map()
             }
             return instructionUrlsRef.current
         }
 
-        function getSelectMap(){
-            if(!selectImagesRef.current){
-                selectImagesRef.current = new Map()
-            }
-            return selectImagesRef.current
-        }
-
-        function getInstrImageMap(){
-            
-        }
 
     return(
         <>
-            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); setState(newState); scrollToError(newState)}}>
+            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
                 <div className="hidden">
                     <ol>
@@ -843,21 +795,21 @@ export default function RecipeEditPage({recipeData}){
                         {showDescriptionImageTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
                         {showDescriptionImageTooltip && <p className=" text-left bg-gray-600 text-white tooltip absolute w-60 sm:w-80 translate-x-[-120px] z-[1] top-[40px]">
                             The main picture of your recipe. Usually the picture of the end result of your recipe. If set, this is the first image a visitor will see on your recipe.
-                            <br></br>You can set it to be an image already uploaded previously for this recipe, or upload a new image.
+                            <br></br>You can set it to be an image already uploaded previously for this recipe, or upload a new image. Max size 2MB.
                         </p>}
                         </div>
                     </div>
 
                     <table className=" table-auto">
                         <tbody>
-                            {images.length>0&&
+                            {oriImageList.length>0&&
                             <tr>
                                 <td className="align-top"><input defaultChecked={initialSetting=="existing" ? true : false} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input></td>
                                 <td >
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                     <label className="ml-2" htmlFor="description-image-existing">Choose from existing: </label>
                                     <div className="flex flex-row relative w-[270px] sm:w-[351px] md:w-[452px]">
-                                    <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex]); setExistingDescriptionImageUrl(images[e.target.selectedIndex].url); console.log("description image: "+ existingDescriptionImageUrl)}}>
+                                    <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex]); setExistingDescriptionImageUrl(oriImageList[e.target.selectedIndex].url);}}>
                                     {imageSelectItems}
                                     </select>
                                     <input className="hidden" name="description-image-url" value={existingDescriptionImageUrl}></input>
@@ -867,13 +819,6 @@ export default function RecipeEditPage({recipeData}){
                                         {showEnlargedDescriptionImage && <img alt="" className=" -translate-x-[148px] z-[1] w-[267px] h-[196px] sm:w-[348px] sm:h-[240px] md:w-[450px] md:h-[320px] absolute top-[52px]" src={existingDescriptionImage.url}></img>}
                                     </div>
                                     </div>
-                                        {/* <div className="relative mt-2">
-                                            <InformationCircleIcon className="ml-1 w-6" onMouseEnter={() => setShowDescriptionTooltip(true)} onMouseLeave={() => setShowDescriptionTooltip(false)}></InformationCircleIcon>
-                                            {showDescriptionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
-                                            {showDescriptionTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-72 translate-x-[-100px] z-[1] top-[40px]">Provide a description of the history of the recipe, the process of making the recipe, what the end result looks like, why it tastes so good, etc. Press &#8635; icon to revert to original value</p>}
-                                        </div>   */}
-                                    
-                                    
                                     </div>
                                 </td>
                             </tr>}
@@ -883,10 +828,10 @@ export default function RecipeEditPage({recipeData}){
                                 <div className="mb-1 flex flex-col sm:flex-row">
                                 <label className="ml-2 mr-5 sm:mt-2" htmlFor="description-image-new">Choose from device: </label>
                                 <div className="flex flex-row">
-                                <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
+                                <input ref={descriptionImageRef} onChange={e=>{if(!descriptionImageRef.current||!descriptionImageRef.current.files){return} setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); validateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
                                 <label htmlFor="description-image" className="ml-2 sm:ml-0 btn "><span className="text-sm">Choose File</span></label>
                                 <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
-                                {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
+                                {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{if(!descriptionImageRef.current){return} descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
                                 </div>
                                 {descriptionImageError!=="" && <p className="mt-2 ml-1 text-sm text-red-500">{descriptionImageError}</p>}
                                 </div>
@@ -897,36 +842,8 @@ export default function RecipeEditPage({recipeData}){
                                 <td><label className="ml-2" htmlFor="description-image-none">None</label></td>
                             </tr>
                         </tbody>
-                    </table>
-
-                    {/* <div className="flex flex-col">
-                        <div className="">
-                            <div className="flex flex-row">
-                            <input defaultChecked={initialSetting=="existing" ? true : false} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input>
-                            <label className="ml-2 mr-2" htmlFor="description-image-existing">Choose from existing: </label>
-                            </div>
-                            <select name="description-image-filename" defaultValue={oriDescriptionMedia!==null ? oriDescriptionMedia.filename : "--Select--"} className="outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{setExistingDescriptionImage(oriImageList[e.target.selectedIndex])}}>
-                                {imageSelectItems}
-                            </select>
-                            <input className="hidden" name="description-image-url" defaultValue={existingDescriptionImage.url}></input>
-                        </div>
-                        <div className="flex flex-row mt-2">
-                            <input defaultChecked={initialSetting=="new" ? true : false} type="radio" name="description-image-option" id="description-image-new" value="new"></input>
-                            <label className="mt-3 ml-2 mr-5" htmlFor="description-image-new">Choose from device: </label>
-                            <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
-                            <label htmlFor="description-image" className="relative btn"><span className="text-sm">Choose File</span></label>
-                            <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
-                            {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
-                        </div>
-                        <div>
-                            <input defaultChecked={initialSetting=="none" ? true : false} type="radio" name="description-image-option" id="description-image-none" value="none"></input>
-                            <label className="ml-2" htmlFor="description-image-none">None</label>
-                        </div>
-                    </div> */}
-                    
+                    </table>                    
                 </div> 
-
-                {/* <section className="flex flex-col sm:flex-row"> */}
 
                 <section className="">
                 <div className="flex flex-row">
@@ -954,10 +871,8 @@ export default function RecipeEditPage({recipeData}){
                     {state!=null && state.errorField==="servings" && <div id="servings-error" aria-live="polite" aria-atomic="true"><p className="text-right text-xs mt-1 text-red-500">{state.message}</p></div>}
                     </div>
                     <button type="button" className=" ml-2 mt-3 outline outline-1 outline-gray-300 rounded-sm min-w-8 h-[40px] text-xl my-auto" onClick={resetServings}>&#8635;</button>
-                </div>
-                
+                </div>          
                 </section>
-                {/* </section> */}
 
                 <div className="pt-2 border rounded-md border-gray-300 mt-2 flex flex-col">
                     <div className=" flex flex-row">
@@ -1014,7 +929,7 @@ export default function RecipeEditPage({recipeData}){
                         x Icon: Removes the instruction<br></br>
                         &uarr; Icon: Shifts instruction up<br></br>
                         &darr; Icon: Shifts instruction down<br></br>
-                        You may attach one image, max. size 7MB to each instruction</span></p>}
+                        You may attach one image, max. size 2MB to each instruction</span></p>}
                     </div>
                     <button type="button" className="ml-1 px-4 w-20 mr-1 btn bg-gray-100" onClick={addInstruction}>Add</button>
                     <button type="button" className=" ml-1 outline outline-1 outline-gray-300 rounded-sm min-w-8 max-h-8 text-xl my-auto" onClick={resetInstructions}>&#8635;</button>
@@ -1091,7 +1006,6 @@ export default function RecipeEditPage({recipeData}){
                     </div>
                 </div>
                 <div className="mt-3 mb-7 flex flex-row-reverse">
-                {/* <button className="btn ml-3 bg-red-600">Update</button> */}
                 <SubmitButton></SubmitButton>
                 </div>
             </form>

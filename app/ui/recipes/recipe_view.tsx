@@ -1,25 +1,17 @@
 'use client'
-import Image from "next/image";
 import { goToEditRecipe } from "@/app/lib/actions";
-import { useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import UtilityBar from "./recipe_view_utility_bar";
-import { tokenRefresh } from "@/app/lib/actions";
-
 import DeletionModal from "./recipe_delete_modal";
-import { useFormStatus } from "react-dom";
+import { Description_Image, Ingredient, Instruction, Note, Recipe } from "@/app/lib/definitions";
+import { convertToMetric, convertToImperial } from "@/app/lib/converters/metric-imperial_Converter";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
-function editRecipe(uuid){
+function editRecipe(uuid:string){
     goToEditRecipe(uuid)
 }
 
-
-
-let imageCount = 0
-
-
-
-export default function View({recipeData, uuid}){
-    
+export default function View({recipeData, uuid}:{recipeData:{recipe_description_media:Description_Image, recipe:Recipe, has_edit_permission:boolean}, uuid:string}){
 
     const [showDelete, setShowDelete] = useState(false);
     const canEdit = recipeData.has_edit_permission
@@ -31,29 +23,36 @@ export default function View({recipeData, uuid}){
     const cookTime = recipe.cook_Time_Mins
     const servings = recipe.servings
 
-    const descriptionImageRef = useRef(null)
+    const descriptionImageRef = useRef<HTMLImageElement>(null)
     const descriptionImageButtonRef = useRef(null)
-    const instructionImagesRef = useRef(null)
-    const instructionImagesButtonsRef = useRef(null)
+    const instructionImagesRef = useRef<Map<string, HTMLImageElement>|null>(null)
+    const instructionImagesButtonsRef = useRef<Map<string, HTMLElement>|null>(null)
 
-    const ingredients = recipe.ingredients
-    function compareIngredientsBySequence(a,b){
+    const oriIngredients = recipe.ingredients
+    const [ingredients, setIngredients] = useState(oriIngredients)
+    const [showIngredientsUnitTooltip, setShowIngredientUnitTooltip] = useState(false)
+    const oriInstructions = recipe.instructions
+    const [instructions, setInstructions] = useState(oriInstructions)
+    const [showInstructionsUnitTooltip, setShowInstructionsUnitTooltip] = useState(false)
+    function compareIngredientsBySequence(a:Ingredient,b:Ingredient){
         return a.ingredient_Number - b.ingredient_Number
     }
+    if(ingredients){
     ingredients.sort(compareIngredientsBySequence)
-
-    const notes = recipe.notes
-    function compareNotesBySequence(a,b){
-        return a.noteNumber-b.noteNumber
     }
+    const notes = recipe.notes
+    function compareNotesBySequence(a:Note,b:Note){
+        return a.note_Number-b.note_Number
+    }
+    if(notes){
     notes.sort(compareNotesBySequence)
-
-    const instructions = recipe.instructions
-    function compareInstructionsBySequence(a,b){
+    }
+    function compareInstructionsBySequence(a:Instruction,b:Instruction){
         return a.sequence_Number - b.sequence_Number
     }
+    if(instructions){
     instructions.sort(compareInstructionsBySequence)
-    
+    }
     let description_media_url = null;
     let description_media_description = null;
     if(recipe_media){
@@ -61,7 +60,7 @@ export default function View({recipeData, uuid}){
         description_media_description = recipe_media.description
     }
 
-    function getMap(){
+    function getMap():Map<string,HTMLElement>{
         if(!instructionImagesRef.current){
             instructionImagesRef.current = new Map()
         }
@@ -74,37 +73,44 @@ export default function View({recipeData, uuid}){
         }
         return instructionImagesButtonsRef.current
     }
-
-    const ingredientItems = ingredients.map(i=>
-        <>
+    let ingredientItems;
+    if(ingredients){
+    ingredientItems = ingredients.map(i=>
+        
         <tbody key={i.uuid}>
             <tr>
             <td className="w-5 align-top"><p className="text-left">{i.ingredient_Number+"."}</p></td>
             <td><p className="ml-2">{i.description}</p></td>
             </tr>
         </tbody>
-        </>
+        
         )
+    }
 
-    const instructionItems = instructions.map(i=>
-        <>
+    let instructionItems;
+    if(instructions){
+    instructionItems = instructions.map(i=>
+        
         <tbody key={i.uuid}>
             <tr>
             <td className="w-5 align-top"><p className="text-left">{i.sequence_Number+"."}</p></td>
             <td>
                 <div className="ml-2">
                 <p>{i.description}</p>
-                {i.images.length>0 && i.images[0].url!==null && 
-                 <div className=" flex flex-col"><img className=" relative w-[70%] aspect-[97/56]" ref={(node)=>{const map=getMap(); if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}}  src={i.images[0].url} alt=""></img><button ref={(node)=>{const map = getInstrImageButtonMap(); if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}} className=" w-[80px] h-[24px] outline outline-1 text-sm bg-opacity-45 bg-zinc-200 relative ml-1 bottom-[26px] z-[2] print:hidden" onClick={()=>{const imageMap = getMap(); const imageRef = imageMap.get(i.uuid); const buttonMap = getInstrImageButtonMap(); const buttonRef = buttonMap.get(i.uuid); changeImageVisibility2(imageRef, buttonRef)}}>Hide image</button></div>} 
+                {i.images&&i.images.length>0 && i.images[0].url!==null && 
+                 <div className=" flex flex-col"><img className=" relative w-[70%] aspect-[97/56]" ref={(node)=>{const map=getMap(); if(!i.uuid){return} if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}}  src={i.images[0].url} alt=""></img><button ref={(node)=>{const map = getInstrImageButtonMap(); if(!i.uuid){return} if(node){map.set(i.uuid, node);}else{map.delete(i.uuid)}}} className=" w-[80px] h-[24px] outline outline-1 text-sm bg-opacity-45 bg-zinc-200 relative ml-1 bottom-[26px] z-[2] print:hidden" onClick={()=>{const imageMap = getMap(); if(!i.uuid){return} const imageRef = imageMap.get(i.uuid); const buttonMap = getInstrImageButtonMap(); const buttonRef = buttonMap.get(i.uuid); if(!imageRef||!buttonRef){return} changeImageVisibility2(imageRef, buttonRef)}}>Hide image</button></div>} 
                 </div>
             </td>
             </tr>
         </tbody>
-        </>
+        
         )
+    }
 
-    const noteItems = notes.map(n=>
-        <>
+    let noteItems;
+    if(notes){
+    noteItems = notes.map(n=>
+        
         <tbody key={n.uuid}>
             <tr>
                 <td className="w-5 align-top"><p className="text-left">{n.note_Number+"."}</p></td>
@@ -115,13 +121,14 @@ export default function View({recipeData, uuid}){
                 </td>
             </tr>
         </tbody>
-        </>
-        // <>
-        //     <p key={n.uuid}>{n.note_Number+". "}{n.description}</p>
-        // </>
+       
         )
+    }
 
-    function changeImageVisibility(imageRef, buttonRef){
+    function changeImageVisibility(imageRef:RefObject<HTMLImageElement>, buttonRef:RefObject<HTMLElement>){
+        if(!imageRef.current||!buttonRef.current){
+            return
+        }
         if(imageRef.current.style.display=="none"){
             imageRef.current.style.display="inline-block"
             buttonRef.current.style.bottom="24px"
@@ -136,7 +143,7 @@ export default function View({recipeData, uuid}){
         
     }
 
-    function changeImageVisibility2(imageRef, buttonRef){
+    function changeImageVisibility2(imageRef:HTMLElement, buttonRef:HTMLElement){
         if(imageRef.style.display=="none"){
             imageRef.style.display="inline-block"
             buttonRef.style.bottom="24px"
@@ -154,6 +161,77 @@ export default function View({recipeData, uuid}){
         setShowDelete(false)
     }
 
+    function convertIngredientsToMetric(){
+        const metricIngredients = oriIngredients?.map(i=>{
+            return {
+                ...i,
+                description: convertToMetric(i.description)
+            }
+        })
+        setIngredients(metricIngredients)
+    }
+
+    function convertIngredientsToImperial(){
+        const imperialIngredients = oriIngredients?.map(i=>{
+            return {
+                ...i,
+                description: convertToImperial(i.description)
+            }
+        })
+        setIngredients(imperialIngredients)
+    }
+
+    function resetIngredients(){
+        setIngredients(oriIngredients)
+    }
+
+    function changeIngredientUnits(system:string){
+        if(system.toLowerCase()==="metric"){
+            convertIngredientsToMetric()
+        }else if(system.toLocaleLowerCase()==="imperial"){
+            convertIngredientsToImperial()
+        }else{
+            resetIngredients()
+        }
+    }
+
+    function convertInstructionsToMetric(){
+        const imperialInstructions = oriInstructions?.map(i=>{
+            return {
+                ...i,
+                description: convertToMetric(i.description)
+            }
+        })
+        setInstructions(imperialInstructions)
+    }
+
+    function convertInstructionsToImperial(){
+        const imperialInstructions = oriInstructions?.map(i=>{
+            return {
+                ...i,
+                description: convertToImperial(i.description)
+            }
+        })
+        setInstructions(imperialInstructions)
+    }
+
+    function resetInstructions(){
+        setInstructions(oriInstructions)
+    }
+
+    function changeInstructionUnits(system:string){
+        if(system.toLowerCase()==="metric"){
+            convertInstructionsToMetric()
+        }else if(system.toLocaleLowerCase()==="imperial"){
+            convertInstructionsToImperial()
+        }else{
+            resetInstructions()
+        }
+    }
+
+    if(!recipe.uuid||!recipe.title){
+        return
+    }
     
 
     return (
@@ -177,7 +255,20 @@ export default function View({recipeData, uuid}){
             </section>
 
             <section className = "mt-3" key="ingredients-section">
+            <div className="flex flex-row">
             <h2 className="font-bold">Ingredients</h2>
+            <div className="ml-2 print:hidden">Units:</div>
+            <select className="print:hidden ml-2 rounded outline outline-1 outline-gray-400" onChange={e=>{changeIngredientUnits(e.target.value)}}>
+                <option>Original</option>
+                <option>Metric</option>
+                <option>Imperial</option>
+            </select>
+            <div className="relative">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowIngredientUnitTooltip(true)} onMouseLeave={()=>setShowIngredientUnitTooltip(false)}></InformationCircleIcon>
+                        {showIngredientsUnitTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showIngredientsUnitTooltip && <p className="p-1 text-left bg-gray-600 text-white tooltip absolute w-[300px] right-1 translate-x-12 z-10 top-[40px]">Detects and converts measurements from one measurement system into another. Pays no attention to context, which may result in unexpected changes that alter the meaning of the recipe. Always refer to original for the author&apos;s intended instructions. Teaspoons, tablespoons, quarts, pints, fluid ounces, gallons etc. are assumed to be the US standard.</p>}
+                    </div>
+            </div>
             <table className="table-auto w-[100%]">
                 <thead>
                     <tr>
@@ -190,7 +281,20 @@ export default function View({recipeData, uuid}){
             </section>
 
             <section className = "mt-3" key="instructions-section">
+            <div className="flex flex-row"> 
             <h2 className="font-bold">Instructions</h2>
+            <div className="ml-2 print:hidden">Units:</div>
+            <select className="print:hidden ml-2 rounded outline outline-1 outline-gray-400" onChange={e=>{changeInstructionUnits(e.target.value)}}>
+                <option>Original</option>
+                <option>Metric</option>
+                <option>Imperial</option>
+            </select>
+            <div className="relative">
+                        <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowInstructionsUnitTooltip(true)} onMouseLeave={()=>setShowInstructionsUnitTooltip(false)}></InformationCircleIcon>
+                        {showInstructionsUnitTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
+                        {showInstructionsUnitTooltip && <p className="p-1 text-left bg-gray-600 text-white tooltip absolute w-[300px] right-1 translate-x-12 z-10 top-[40px]">Detects and converts measurements from one measurement system into another. Pays no attention to context, which may result in unexpected changes that alter the meaning of the recipe. Always refer to original for the author&apos;s intended instructions. Teaspoons, tablespoons, quarts, pints, fluid ounces, gallons etc. are assumed to be the US standard.</p>}
+                    </div>
+            </div>   
             <table className="table-auto w-[100%]">
                 <thead>
                     <tr>
@@ -218,7 +322,7 @@ export default function View({recipeData, uuid}){
             <div className="flex flex-row-reverse">
                 
                 {canEdit &&<div> <button type="button" className="mt-1 btn w-24 bg-red-500 print:hidden" onClick={()=>setShowDelete(true)}>Delete</button> 
-                <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={(e)=>{e.preventDefault(); editRecipe(recipe.uuid)}}>Edit</button></div>}
+                <button className="mt-1 btn w-24 bg-green-400 print:hidden" onClick={(e)=>{e.preventDefault(); if(!recipe.uuid){return} editRecipe(recipe.uuid)}}>Edit</button></div>}
                 
             </div>
             </main>

@@ -1,12 +1,8 @@
-import { refreshToken } from "@/app/api/users"
 import { validateToken } from "@/app/lib/auth"
 import RefreshRetry from "@/app/ui/intermediaries/refreshRetry"
-import Form from "@/app/ui/recipes/recipe_creation_form_mobile_proportionate"
+import Form from "@/app/ui/recipes/recipe-creation-form"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-
-
-
 
 export default async function Page(){
     const tokenIsValid = await validateToken()

@@ -1,32 +1,13 @@
 'use client'
-import { useFormState } from "react-dom"
-import { useState } from "react"
+import {useState } from "react"
 import { useRef } from "react"
-import { createNewRecipe, redirectToLogin } from "@/app/lib/actions"
+import { createNewRecipe} from "@/app/lib/actions"
 import ValidateImage from "@/app/lib/validators/ImageValidator"
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
 import {ArrowUpIcon} from "@heroicons/react/24/outline"
 import {ArrowDownIcon} from "@heroicons/react/24/outline"
-import { tokenRefresh } from "@/app/lib/actions"
 import { useFormStatus } from "react-dom"
-
-
-const units = [
-     {id: 0, name: "Pieces(pcs)"},
-     {id: 1, name: "Gram(g)"},
-     {id: 2, name: "Kilogram(kg)"},
-     {id: 3, name: "Ounce(oz)"},
-     {id: 4, name: "Pound(lb)"},
-     {id: 5, name: "Teaspoon(tsp)"},
-     {id: 6, name: "Tablespoon(tbsp)"},
-     {id: 7, name: "Milliliter(ml)"},
-     {id: 8, name: "Litre(L)"},
-     {id: 9, name: "Fluid ounce (fl oz)"},
-     {id: 10, name: "Cup"},
-     {id: 11, name: "Pint"},
-     {id: 12, name: "Quart"},
-     {id: 13, name: "Gallon"}
-]
+import { FormError } from "@/app/lib/definitions"
 
 let ingredientCount=0
 let instructionCount=0
@@ -41,7 +22,7 @@ function jumpTo(element:HTMLElement|null){
     element?.focus()
 }
 
-function scrollToError(error){
+function scrollToError(error:FormError){
     if(error===null){
         return
     }
@@ -72,12 +53,10 @@ function scrollToError(error){
     }
 }
 
-export default function Form(){
-    
-    
+export default function Form(){  
     const initialState = {errorField:null, message:null, index:null}
-    //const [state, dispatch] = useFormState(createNewRecipe, initialState)
-    const [state, setState] = useState(initialState)
+
+    const [state, setState] = useState<FormError>(initialState)
     const [showTitleTooltip, setShowTitleTooltip] = useState(false)
     const [showDescriptionTooltip, setShowDescriptionTooltip] = useState(false)
     const [showDescriptionImageTooltip, setShowDescriptionImageTooltip] = useState(false)
@@ -89,13 +68,13 @@ export default function Form(){
     const [showPrivateTooltip, setShowPrivateTooltip] = useState(false)
     const [showPublicTooltip, setShowPublicTooltip] = useState(false)
 
-    const descriptionImageRef = useRef(null)
-    const instructionImagesRef = useRef(null)
+    const descriptionImageRef = useRef<HTMLInputElement>(null)
+    const instructionImagesRef = useRef<Map<number, HTMLInputElement>|null>(null)
 
     const [descriptionImageError, setDescriptionImageError] = useState("")
-    const [ingredients, setIngredients] = useState([{id: 0, description: "", quantity:0, unit:units[0].name, order:1}])
+    const [ingredients, setIngredients] = useState<({ id: number; description: string; order: number; }[])>([{id: 0, description: "", order:1}])
     const [instructions, setInstructions] = useState([{id: 0, description: "", order:1, imageFileName:"No file chosen", fileChosen: false, imageButtonText: "Choose Image", imageErrorText: ""}])
-    const [notes, setNotes] = useState([])
+    const [notes, setNotes] = useState<{id:number,order:number,description:string}[]>([])
     const [descriptionImage, setDescriptionImage] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
 
     function SubmitButton(){
@@ -104,47 +83,7 @@ export default function Form(){
     }
     
     const instructionItems = instructions.map(i=>
-        {if(i.order===1&&instructions.length===1){
-            return(<tbody className=" border border-gray-300" key={i.id}>
-                <tr className=" border border-gray-300">
-                    <td className="border border-gray-300 w-5"><p className=" text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
-                    <td className="border border-gray-300 md:[w-120%]">
-                        <textarea id={"instruction-input-"+i.order} aria-describedby={"instruction-error"+i.id} className="w-[100%] p-1 rounded h-20 outline outline-1 outline-gray-400 md:resize-y" name="instruction-description" placeholder={"Instruction No. "+i.order}></textarea>     
-                        {state!=null && state.errorField==="instructions" && state.index === i.order && <div id={"instruction-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
-                        <div className="flex flex-row md:mb-1">
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm max-w-[130px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 mb-3 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                        <div className="flex flex-row float-right md:hidden">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                        </div>
-                    </td>
-                    <td className="hidden border border-gray-300 w-[260px]">
-                        <div className="w-[100px] flex flex-row">
-                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>{updateInstructionImage(i.id);}} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
-                        <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
-                        <p className="mt-3 text-sm min-w-[100px] max-w-[100px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
-                        {i.fileChosen && <button type="button" className="ml-2 mb-2 text-red-700 text-2xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
-                        </div>
-                        {i.imageErrorText!="" && <p className="mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                    </td>
-                    <td className="hidden border border-gray-300 md:table-cell w-[80px]">
-                    <div className="flex flex-row float-right">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>)
-        }else{
-            return(<tbody key={i.id}>
+        <tbody key={i.id}>
                 <tr className="border border-gray-300">
                     <td className="border border-gray-300 w-5"><p className="text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                     <td className="border border-gray-300 md:[w-120%]">
@@ -159,14 +98,14 @@ export default function Form(){
                         {i.imageErrorText!="" && <p className="md:hidden mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
                         <div className="flex flex-row float-right md:hidden">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" disabled = {instructions.length===1&&i.order===1?true:false} type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                         </div>
                     </td>
                     <td className="hidden border border-gray-300 w-[260px]">
                     <div className="w-[100px] flex flex-row">
-                        <input ref={(node)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
+                        <input ref={(node:HTMLInputElement)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
                         <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
                         <p className="mt-3 text-sm min-w-[100px] max-w-[100px] ml-2 whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{i.imageFileName}</p>
                         {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
@@ -176,15 +115,13 @@ export default function Form(){
                     <td className=" hidden border border-gray-300 md:table-cell w-[80px]">
                     <div className="flex flex-row float-right">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" disabled = {instructions.length===1&&i.order===1?true:false} type="button" onClick={()=>removeInstruction(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                     </div>
                     </td>
                 </tr>
-            </tbody>)
-        }
-        }
+            </tbody>
         )
 
 
@@ -213,38 +150,14 @@ export default function Form(){
         )
 
     const ingredientItems = ingredients.map(i=>
-        {if(i.order===1 && ingredients.length===1){
-
-            return  ( <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
-                        <td className="border border-gray-300 min-w-5"><p className=" text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
-                        <td className=" border border-gray-300 md:w-[120%]">
-                            <textarea id={"ingredient-input-"+i.order} aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 resize-none outline outline-1 outline-gray-400 rounded md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order}></textarea>{/*w-264px */}
-                            {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
-                            <div className="flex flex-row float-right md:hidden">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                            </div>
-                        </td>
-                        <td className="hidden border border-gray-300 md:table-cell">
-                            <div className="flex flex-row items-center">
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" disabled><p className="text-red-500 text-2xl">&times;</p></button>
-                                <button className="btn-sm mr-2" type="button" disabled><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
-                                <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
-                            </div> 
-                        </td>
-                    </tr></tbody>)
-        }else{
-            return (<tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
+        <tbody className=" border border-gray-300" key={i.id}><tr className="border border-gray-300">
                         <td className="border border-gray-300 min-w-5"><p className="md:w-5 text-center">{i.order}{i.order===1 ? <span className="text-base text-red-600">*</span> : <></>}</p></td>
                         <td className=" border border-gray-300 md:w-[120%]">
                             <textarea id={"ingredient-input-"+i.order} aria-describedby={"ingredient-error"+i.id} className=" w-[100%] p-1 rounded resize-none outline outline-1 outline-gray-400 md:resize-y" name="ingredient-description" placeholder={"Ingredient No. "+i.order}></textarea>
                             {state!=null && state.errorField==="ingredients" && state.index === i.order && <div id={"ingredient-error"+i.id} aria-live="polite" aria-atomic="true"><p className="mt-1 text-sm text-red-500">{state.message}</p></div>}
                             <div className="flex flex-row float-right md:hidden">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled={ingredients.length===1 && i.order===1?true:false} onClick={()=>removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                             </div>
@@ -252,18 +165,20 @@ export default function Form(){
                         <td className="hidden border border-gray-300 md:table-cell">
                         <div className="flex flex-row items-center">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addIngredientBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
-                                <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
+                                <button className="btn-sm -mt-1 mr-2" type="button" disabled={ingredients.length===1 && i.order===1?true:false} onClick={()=>removeIngredient(i.id)}><p className="text-red-500 text-2xl">&times;</p></button>
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveIngredientUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveIngredientDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                             </div>
                         </td>
-            </tr></tbody>)
-        }}
+            </tr></tbody>
         )
 
-    function ValidateDescriptionImage(file){
+    function ValidateDescriptionImage(file:File){
         const error = ValidateImage(file)
         if(error){
+            if(!descriptionImageRef.current){
+                return
+            }
             descriptionImageRef.current.files=null;
             setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
             setDescriptionImageError(error.message)
@@ -273,26 +188,20 @@ export default function Form(){
 
     }
 
-    function getMap(){
+    function getMap():Map<number,HTMLInputElement> {
         if(!instructionImagesRef.current){
-            instructionImagesRef.current = new Map()
+            instructionImagesRef.current = new Map<number, HTMLInputElement>()
         }
         return instructionImagesRef.current
     }
 
-    function ValidateInstructionImage(id){
-        const map = getMap();
-        const node = map.get(id)
-        const error = ValidateImage(node.files[0])
-        if(error){
 
-        }
-
-    }
-
-    function removeInstructionImageFile(id){
+    function removeInstructionImageFile(id:number){
         const map = getMap();
         const node = map.get(id);
+        if(!node){
+            return
+        }
         node.files = null;
         const nextInstructions = instructions.map(i=>{
             if(i.id===id){
@@ -309,15 +218,22 @@ export default function Form(){
         setInstructions(nextInstructions)
     }
 
-    function updateInstructionImage(id){
+    function updateInstructionImage(id:number){
         const map = getMap();
         const node = map.get(id);
-        let nextInstructions;
+        if(!node||!node.files){
+            return
+        }
+        
         const error = ValidateImage(node.files[0])
 
         if(!error){
-         nextInstructions = instructions.map(i=>{
+         const nextInstructions = instructions.map(i=>{
+            
             if(i.id === id){
+                if(!node.files){
+                    return i
+                }
                 return{
                     ...i,
                     imageFileName: node.files[0].name,
@@ -325,12 +241,14 @@ export default function Form(){
                     imageButtonText: "Repick Image",
                     imageErrorText: ""
                 }
+                
             }else{
                 return i
             }
         })
+        setInstructions(nextInstructions)
         }else{
-            nextInstructions = instructions.map(i=>{
+            const nextInstructions = instructions.map(i=>{
                 if(i.id===id){
                     return{
                         ...i,
@@ -343,9 +261,10 @@ export default function Form(){
                     return i
                 }
             })
+            setInstructions(nextInstructions)
         }
-
-        setInstructions(nextInstructions)
+       
+        
     }
 
     function addNote(){
@@ -356,7 +275,7 @@ export default function Form(){
         ])
     }
 
-    function removeNote(id){
+    function removeNote(id:number){
         const copy = [...notes]
         const nextNotes = copy.filter(i=>
             i.id!=id
@@ -373,11 +292,11 @@ export default function Form(){
         ingredientCount++;
         setIngredients([
             ...ingredients,
-            {id: ingredientCount, description: "", quantity:0, unit:units[0].name, order: ingredients.length+1}
+            {id: ingredientCount, description: "", order: ingredients.length+1}
         ])
     }
 
-    function addIngredientBelow(Id){
+    function addIngredientBelow(Id:number){
         const indexToAddBelow = ingredients.findIndex(({id})=>id===Id)
         ingredientCount++
         const nextIngredients = [...ingredients.slice(0, indexToAddBelow+1),
@@ -392,7 +311,7 @@ export default function Form(){
 
     }
 
-    function removeIngredient(id){
+    function removeIngredient(id:number){
         const copy = [...ingredients]
         const afterRemovedIngredient = copy.filter(i=>
             i.id!=id
@@ -406,12 +325,21 @@ export default function Form(){
 
     }
 
-    function moveIngredientDown(Id){
+    function moveIngredientDown(Id:number){
+        //let ingredientToMoveDown:{ id: number; description: string; order: number; };
         const ingredientToMoveDown = ingredients.find(({id})=>id===Id)
+        
+        if(!ingredientToMoveDown){
+            return
+        }
+
         if(ingredientToMoveDown.order>=ingredients.length){
             return
         }
         const ingredientBelow = ingredients.find(({order})=>order===ingredientToMoveDown.order+1)
+        if(!ingredientBelow){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveDown.order-1] = ingredientBelow
         nextIngredients[ingredientBelow.order-1] = ingredientToMoveDown
@@ -422,12 +350,18 @@ export default function Form(){
         setIngredients(nextIngredients)
     }
 
-    function moveIngredientUp(Id){
+    function moveIngredientUp(Id:number){
         const ingredientToMoveUp = ingredients.find(({id})=>id===Id)
+        if(!ingredientToMoveUp){
+            return
+        }
         if(ingredientToMoveUp.order<=1){
             return
         }
         const ingredientAbove = ingredients.find(({order})=>order===ingredientToMoveUp.order-1)
+        if(!ingredientAbove){
+            return
+        }
         const nextIngredients = [...ingredients]
         nextIngredients[ingredientToMoveUp.order-1] = ingredientAbove
         nextIngredients[ingredientAbove.order-1] = ingredientToMoveUp
@@ -438,7 +372,7 @@ export default function Form(){
         setIngredients(nextIngredients)
     }
 
-    function addNoteBelow(Id){
+    function addNoteBelow(Id:number){
         const indexToAddBelow = notes.findIndex(({id})=>id===Id)
         notesCount++
         const nextNotes = [...notes.slice(0, indexToAddBelow+1),
@@ -451,12 +385,18 @@ export default function Form(){
         setNotes(nextNotes)
     }
 
-    function moveNoteDown(Id){
+    function moveNoteDown(Id:number){
         const noteToMoveDown = notes.find(({id})=>id===Id)
+        if(!noteToMoveDown){
+            return
+        }
         if(noteToMoveDown.order>=notes.length){
             return
         }
         const noteBelow = notes.find(({order})=>order===noteToMoveDown.order+1)
+        if(!noteBelow){
+            return
+        }
         const nextNotes = [...notes]
         nextNotes[noteToMoveDown.order-1] = noteBelow
         nextNotes[noteBelow.order-1] = noteToMoveDown
@@ -466,13 +406,19 @@ export default function Form(){
         setNotes(nextNotes)
     }
 
-    function moveNoteUp(Id){
+    function moveNoteUp(Id:number){
         const noteToMoveUp = notes.find(({id})=>id===Id)
+        if(!noteToMoveUp){
+            return
+        }
         if(noteToMoveUp.order<=1){
             return
         }
         const noteAbove = notes.find(({order})=>order===noteToMoveUp.order-1)
         const nextNotes = [...notes]
+        if(!noteAbove){
+            return
+        }
         nextNotes[noteToMoveUp.order-1] = noteAbove
         nextNotes[noteAbove.order-1] = noteToMoveUp
         for(let j=0; j<nextNotes.length; j++){
@@ -485,16 +431,16 @@ export default function Form(){
         instructionCount++;
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false,imageErrorText:""}
         ])
 
     }
 
-    function addInstructionBelow(Id){
+    function addInstructionBelow(Id:number){
         const indexToAddBelow = instructions.findIndex(({id})=>id===Id)
         instructionCount++
         const nextInstructions = [...instructions.slice(0, indexToAddBelow+1),
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false},
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false,imageErrorText:""},
         ...instructions.slice(indexToAddBelow+1)]
 
         for(let j=0; j<nextInstructions.length; j++){
@@ -504,13 +450,19 @@ export default function Form(){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionDown(Id){
+    function moveInstructionDown(Id:number){
         const instructionToMoveDown = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveDown){
+            return
+        }
         if(instructionToMoveDown.order>=instructions.length){
             return
         }
         const instructionBelow = instructions.find(({order})=>order===instructionToMoveDown.order+1)
         const nextInstructions = [...instructions]
+        if(!instructionBelow){
+            return
+        }
         nextInstructions[instructionToMoveDown.order-1] = instructionBelow
         nextInstructions[instructionBelow.order-1] = instructionToMoveDown
         //reorder based on array index
@@ -520,12 +472,18 @@ export default function Form(){
         setInstructions(nextInstructions)
     }
 
-    function moveInstructionUp(Id){
+    function moveInstructionUp(Id:number){
         const instructionToMoveUp = instructions.find(({id})=>id===Id)
+        if(!instructionToMoveUp){
+            return
+        }
         if(instructionToMoveUp.order<=1){
             return
         }
         const instructionAbove = instructions.find(({order})=>order===instructionToMoveUp.order-1)
+        if(!instructionAbove){
+            return
+        }
         const nextInstructions = [...instructions]
         nextInstructions[instructionToMoveUp.order-1] = instructionAbove
         nextInstructions[instructionAbove.order-1] = instructionToMoveUp
@@ -537,7 +495,7 @@ export default function Form(){
     }
 
 
-    function removeInstruction(id){
+    function removeInstruction(id:number){
         const copy = [...instructions]
         const afterRemovedInstruction = copy.filter(i=>
             i.id!=id
@@ -548,24 +506,13 @@ export default function Form(){
             }
         setInstructions(afterRemovedInstruction)
     }
-
-    function ErrorNote(){
-        if(state===null){
-            return null
-        }
-        if(state.errorField==="title"){
-            return <div className="float-right"><p className="text-red-500">Invalid input detected. Please check your title.</p></div>
-        }
-    }
-
     
-
     return(
         <>
             <h1 id="page-title" className=" mb-3 text-center text-2xl font-bold">Create your recipe</h1>
-            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await createNewRecipe(e); setState(newState); scrollToError(newState)}}>{/*w-300px*/}
+            <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await createNewRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>{/*w-300px*/}
                 <div className="flex flex-row">
-                    <label id="title-label" className="label mr-[7px]" htmlFor="title"><span className=" text-base font-bold">Title<span className="text-base text-red-600">*</span></span></label>
+                    <label id="title-label" className="label mr-[7px]" htmlFor="title"><span className=" text-base font-bold">Title<span className={"text-base text-red-600"}>*</span></span></label>
                     <input id="title-input" type="text" name="title" aria-describedby="title-error" className="h-10 input w-96 outline outline-1 outline-gray-400"/>
                     <div className="relative mt-2">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowTitleTooltip(true)} onMouseLeave={()=>setShowTitleTooltip(false)}></InformationCircleIcon>
@@ -592,19 +539,17 @@ export default function Form(){
                     <div className="relative mt-2">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionImageTooltip(true)} onMouseLeave={()=>setShowDescriptionImageTooltip(false)}></InformationCircleIcon>
                         {showDescriptionImageTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
-                        {showDescriptionImageTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-60 translate-x-[-120px] z-[1] top-[40px]">The main picture of your recipe. Usually the picture of the end result of your recipe. If set, this is the first image a visitor will see on your recipe.</p>}
+                        {showDescriptionImageTooltip && <p className=" bg-gray-600 text-white tooltip absolute w-60 translate-x-[-120px] z-[1] top-[40px]">The main picture of your recipe. Usually the picture of the end result of your recipe. If set, this is the first image a visitor will see on your recipe. Max size 2MB.</p>}
                     </div>
                     </div>
                     <div className="flex flex-row">
-                    <input ref={descriptionImageRef} onChange={e=>{setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
+                    <input ref={descriptionImageRef} onChange={e=>{if(!descriptionImageRef.current||!descriptionImageRef.current.files){return}; setDescriptionImage({name: descriptionImageRef.current.files[0].name, fileChosen: true, buttonText:"Repick Image"}); ValidateDescriptionImage(descriptionImageRef.current.files[0])}} hidden type="file" name="description-image" id="description-image"/>
                     <label htmlFor="description-image" className="relative btn"><span className="text-sm">{descriptionImage.buttonText}</span></label>
                     <p className="ml-2 mt-4 mr-2 text-sm max-w-[130px] whitespace-nowrap overflow-hidden overflow-ellipsis" id="file-chosen">{descriptionImage.name}</p>
-                    {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
+                    {descriptionImage.fileChosen && <button type="button" className=" btn-ghost text-red-700 text-2xl" onClick={()=>{if(!descriptionImageRef.current||!descriptionImageRef.current.files){return}; descriptionImageRef.current.files=null; setDescriptionImage({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})}}>&times;</button>}
                     </div>
                     {descriptionImageError!=="" && <p className="mt-2 ml-1 text-sm text-red-500">{descriptionImageError}</p>}
                 </div>
-
-                {/* <section className="flex flex-col sm:flex-row"> */}
 
                 <section className=" lg:flex lg:flex-row lg:content-between">
                 <div className="flex flex-row">
@@ -688,7 +633,7 @@ export default function Form(){
                         x Icon: Removes the instruction<br></br>
                         &uarr; Icon: Shifts instruction up<br></br>
                         &darr; Icon: Shifts instruction down<br></br>
-                        You may attach one image, max. size 7MB to each instruction</span></p>}
+                        You may attach one image, max. size 2MB to each instruction</span></p>}
                     </div>
                     </div>
 
@@ -764,8 +709,6 @@ export default function Form(){
                     </div>
                 </div>
                 <div className="mt-3 mb-1 flex flex-row-reverse">
-                {/* <button className="btn ml-3 bg-red-600">{!status.pending ? "Create" : "Creating..."}</button> */}
-                {/* <button type="button" className="btn bg-orange-400">Preview</button> */}
                 <SubmitButton></SubmitButton>
                 </div>
                 <div className=" min-h-12">

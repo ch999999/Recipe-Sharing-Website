@@ -1,4 +1,6 @@
-export default function validateNewUser(user){
+import { User } from "../definitions"
+
+export default function validateNewUser(user:User){
     if(!user.firstname){
         return{
             errorField : "firstname",
@@ -37,7 +39,7 @@ export default function validateNewUser(user){
     return null
 }
 
-function passwordIsValid(password){
+function passwordIsValid(password:string){
     if(password.length<8){
         return false
     }
@@ -53,7 +55,7 @@ function passwordIsValid(password){
     return true
 }
 
-function emailIsValid(email){
+function emailIsValid(email:string){
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if(!emailRegex.test(email)){
         return false
@@ -61,7 +63,7 @@ function emailIsValid(email){
     return true
 }
 
-function usernameIsValid(username){
+function usernameIsValid(username:string){
     const alphaNRegex = /^[a-zA-Z0-9]+$/
     if(!alphaNRegex.test(username)){
         return {
