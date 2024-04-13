@@ -3,7 +3,7 @@ export default function ValidateImage(file:File){
         console.log("file size invalid")
         return{
             imageError: "Invalid file size",
-            message: "Max. size 7MB allowed"
+            message: "Max. size 2MB allowed"
         }
     }
     if(!isImageType(file)){
@@ -25,7 +25,7 @@ function isImageType(file:File){
 }
 
 function isValidSize(file:File){
-    const maxSizeMB = 7
+    const maxSizeMB = 2
     const maxSize = 1024 * 1024 * maxSizeMB
     if(file.size > maxSize){
         return false;

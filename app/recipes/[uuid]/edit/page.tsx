@@ -12,29 +12,26 @@ import Loading from "@/app/ui/intermediaries/loading";
 
 export default async function Page({params}:{params:{uuid:string}}){
     const uuid = params.uuid
-    const tokenIsValid = await validateToken()
+    const tokenValidationRes = await validateToken()
     let refresh = false
     
-    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
         refresh = true
     }
-    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
         const nextPageEncoded = encodeURIComponent("recipes/"+uuid+"/edit")
         revalidatePath('/users/login?next='+nextPageEncoded);
         redirect('/users/login?next='+nextPageEncoded)
     }
 
-
-    if(tokenIsValid.success===true){
+    if(tokenValidationRes.success===true){
     const recipeResp = await GETRecipe(uuid)
     const recipeData = await recipeResp?.json()
     
-    if(recipeResp?.status===401&&recipeData.error==="You need to be signed in to access this resource"){
+    if(recipeResp?.status===401){
         return <PrivateRecipeError></PrivateRecipeError>
     }
-    if(recipeResp?.status===401&&recipeData.error==="You do not have permission to access this resource"){
-        return <PrivateRecipeError></PrivateRecipeError>
-    }
+
     if(recipeResp?.status===404||recipeResp?.status===400){
         return <NonexistantRecipeError></NonexistantRecipeError>
     }

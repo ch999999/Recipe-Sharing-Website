@@ -1,6 +1,5 @@
 'use client'
-
-import { userLogin } from "@/app/lib/actions";
+import { signinUser } from "@/app/lib/actions";
 import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -45,7 +44,7 @@ export default function Form(){
         <>
         <div className="border border-t-0 rounded-md bg-gray-50 p-4 md:p-6 sm:max-w-[508px] lg:w-[55%] mx-auto">
             <p className="italic text-center">Sign in to create recipes and access private recipes</p>
-            <form action={async(e)=>{if(nextPage===null){nextPage=""} setState(await userLogin(e, nextPage))}}>
+            <form action={async(e)=>{if(nextPage===null){nextPage=""} setState(await signinUser(e, nextPage))}}>
             <div className="form-control w-full">
             <label className="label" htmlFor="identifier">
                 <span className="label-text">Username/Email</span>
@@ -70,12 +69,10 @@ export default function Form(){
                 name="password"
                 placeholder=""
                 className="input input-bordered w-full"
-                aria-describedby="password-error"
-                
+                aria-describedby="password-error"  
             />
             <PasswordError/>
         </div>
-
         <div className="form-control w-full mt-4">
         <SubmitButton></SubmitButton>
         </div>

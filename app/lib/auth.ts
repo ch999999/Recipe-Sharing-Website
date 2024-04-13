@@ -1,6 +1,6 @@
 'use server'
 import { cookies } from "next/headers";
-import { checkToken, refreshToken } from "../api/users";
+import { POSTAuthenticateToken, POSTRefreshTokens } from "../api/users";
 
 
 export async function getTokenFromCookie(){
@@ -41,19 +41,19 @@ export async function putRefreshTokenIntoCookie(refreshToken: any){
 
 export async function validateToken(){
 
-    const tokenCheck = await checkToken()
-    if(tokenCheck.status===400){
+    const tokenCheckResp = await POSTAuthenticateToken()
+    if(tokenCheckResp.status===400){
         return {
             success: false,
             tryRefresh: false
         }
-    }else if(tokenCheck.status===404){
+    }else if(tokenCheckResp.status===404){
         
         return {
             success:false,
             tryRefresh:true
         }
-    }else if(tokenCheck.status===200){
+    }else if(tokenCheckResp.status===200){
         return {
             success:true,
             tryRefresh:false
@@ -64,24 +64,13 @@ export async function validateToken(){
             tryRefresh:false
         }
     }
-
-
-
-    // const tokenValidity = await checkToken()
-
-    // if(tokenValidity.status === 200){
-    //     return true;
-    // }
-    // return false;
 }
 
 export async function deleteTokenFromCookie(){
-    console.log("Deleted token from cookie")
     cookies().delete("token")
 }
 
 export async function deleteRefreshTokenFromCookie(){
-    console.log("Deleted refresh token from cookie")
     cookies().delete("refresh-token")
 }
 

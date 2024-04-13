@@ -2,7 +2,8 @@ import { getTokenFromCookie } from "../lib/auth";
 import { Description_Image, Instruction_Image, Recipe } from "../lib/definitions";
 export const dynamic='force-dynamic'
 
-export async function POSTNewRecipe(recipe:Recipe){
+//res represents JSON body content or custom JSON, resp represents the entire HTTP response 
+export async function POSTCreateNewRecipe(recipe:Recipe){
     try{
     const token = await getTokenFromCookie()
     const resp = await fetch(
@@ -59,9 +60,6 @@ export async function POSTInstructionImage(image:Instruction_Image){
                 body: JSON.stringify(image)
             }
         )
-        // const res=await resp.json()
-        // console.log(res)
-        // return res
     }catch(error){
         console.log(error)
     }
@@ -81,11 +79,7 @@ export async function PUTRecipe(recipe:Recipe){
             }
         )
         return resp
-        // const res = await resp.json()
-        // console.log(res)
-        // return res
     }catch(error){
-        
         console.log(error)
     }
 }
@@ -102,24 +96,18 @@ export async function GETRecipe(uuid:string){
                 }
             }         
         )
-        //const res= await resp.json()
-        //return res
         return resp
         }else{
             const resp  =await fetch(
                 process.env.BACKEND_BASE_URL+"/api/Recipe/NoAuth/"+uuid,{
                     method: "GET",
-                    headers:{
-                        
+                    headers:{        
                     }
                 }         
             )
-            // const res= await resp.json()
-            // return res
             console.log("respstatus:"+resp.status)
             return resp
-        }
-        
+        }   
     }catch(error){
         console.log(error)
     }
@@ -140,7 +128,7 @@ export async function GETUserRecipes(){
             const res= await resp.json()
             return res
         }
-}   catch(error){
+     }catch(error){
         console.log(error)
     }
 }
@@ -158,8 +146,6 @@ export async function DELETEDescriptionImage(recipeUUID:string){
                     }
                 }
             )
-            // const res = await resp.json()
-            // return res
         }
     }catch(error){
         console.log(error)
@@ -179,7 +165,6 @@ export async function POSTUploadUpdatedRecipeImage(image:Description_Image){
                 body: JSON.stringify(image)
             }
         )
-        //const res=await resp.json()
         console.log(resp)
         return resp
     }catch(error){
@@ -201,16 +186,14 @@ export async function POSTUpdatedDescriptionImage(image:Description_Image){
                 body: JSON.stringify(image)
             }
         )
-        console.log(resp)
         const res=await resp.json()
-        console.log(res)
         return res
     }catch(error){
         console.log(error)
     }
 }
 
-export async function DELETERecipe(recipeUUID:string){
+export async function DELETERecipe(recipeUUID:string) {
     try{
         const token = await getTokenFromCookie()
 
@@ -223,7 +206,6 @@ export async function DELETERecipe(recipeUUID:string){
                     }
                 }
             )
-            //const res = await resp.json()
             return resp
         }
     }catch(error){
@@ -247,9 +229,6 @@ export async function DELETEUnusedImages(imgUrls:string[]|FormDataEntryValue[]){
                     body: JSON.stringify(imgUrls)
                 }
             )
-            
-            //const res = await resp.json()
-            //console.log(resp)
             return resp
         }
     }catch(error){

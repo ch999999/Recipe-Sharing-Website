@@ -3,17 +3,18 @@ import { Login, User } from "../lib/definitions"
 
 export const dynamic = 'force dynamic'
 
-export async function refreshToken(){
-    const token = await getTokenFromCookie()
-    const refreshTokenn = await getRefreshTokenFromCookie()
-    if(!token || token==="" || !refreshTokenn || refreshTokenn===""){
+//res represents JSON body content or custom JSON, resp represents the entire HTTP response 
+export async function POSTRefreshTokens(){ //formerly refreshToken()
+    const currentAccessToken = await getTokenFromCookie()
+    const currentRefreshToken = await getRefreshTokenFromCookie()
+    if(!currentAccessToken || currentAccessToken==="" || !currentRefreshToken || currentRefreshToken===""){
         return {
             error: "relog"
         }
     }
     const tokens = {
-        AccessToken: token,
-        RefreshToken: refreshTokenn
+        AccessToken: currentAccessToken,
+        RefreshToken: currentRefreshToken
     }
     const authRefreshResp = await fetch(
         process.env.BACKEND_BASE_URL+"/api/User/auth-refresh",{
@@ -37,11 +38,11 @@ export async function refreshToken(){
     
 }
 
-export async function checkToken(){
+export async function POSTAuthenticateToken(){ //formerly checkToken()
     
-    const token = await getTokenFromCookie()
+    const accessToken = await getTokenFromCookie()
     const refreshToken = await getRefreshTokenFromCookie()
-    if(!token || token==="" || !refreshToken || refreshToken===""){
+    if(!accessToken || accessToken==="" || !refreshToken || refreshToken===""){
         return {
             status: 400
         }
@@ -52,7 +53,7 @@ export async function checkToken(){
             mode:"cors",
             headers:{
                 "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + accessToken
             }
         }
     )
@@ -60,8 +61,7 @@ export async function checkToken(){
     return authResp
 }
 
-export async function createUser(user:User){
-    
+export async function POSTCreateNewUser(user:User){ //formerly createUser(user:User)
     try{
     const resp = await fetch(
         process.env.BACKEND_BASE_URL+"/api/User",{
@@ -81,10 +81,10 @@ export async function createUser(user:User){
     }
 }
 
-export async function signinUser(user:Login){
+export async function POSTSigninUser(user:Login){
     try{
         const resp = await fetch(
-            process.env.BACKEND_BASE_URL+"/api/User/login2",{
+            process.env.BACKEND_BASE_URL+"/api/User/login",{
                 method:"POST",
                 mode:"cors",
                 headers:{
@@ -103,7 +103,7 @@ export async function signinUser(user:Login){
 
 }
 
-export async function signUserOut(){
+export async function POSTSignoutUser(){ //formerly signUserOut()
     const tokens = {
         AccessToken: await getTokenFromCookie(),
         RefreshToken: await getRefreshTokenFromCookie()

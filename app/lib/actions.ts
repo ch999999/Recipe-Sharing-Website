@@ -1,21 +1,20 @@
 'use server'
 
-import { createUser, signUserOut } from '../api/users'
+import { POSTCreateNewUser, POSTSignoutUser } from '../api/users'
 import { revalidatePath } from 'next/cache'
 import { notFound, redirect } from 'next/navigation'
-import { signinUser } from '../api/users'
+import { POSTSigninUser } from '../api/users'
 import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
 import { DELETEDescriptionImage, DELETERecipe, DELETEUnusedImages, GETUserRecipes, POSTInstructionImage, POSTUpdatedDescriptionImage, POSTUploadUpdatedRecipeImage, PUTRecipe } from '../api/recipes'
-import { POSTNewRecipe } from '../api/recipes'
+import { POSTCreateNewRecipe } from '../api/recipes'
 import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
 import { POSTDescriptionImage } from '../api/recipes'
 import validateLogin from './validators/loginValidator'
 import validateNewUser from './validators/newUserValidator'
-import { refreshToken } from '../api/users'
+import { POSTRefreshTokens } from '../api/users'
 import { validateToken } from './auth'
-import NonexistantRecipeError from '../ui/errors/nonexistantRecipe'
 import { Ingredient, Instruction, Note } from './definitions'
 
 export type State = {
@@ -24,23 +23,16 @@ export type State = {
      index: number | null;
 }
 
-export async function userLogin(formData:FormData, nexturl:string){
+export async function signinUser(formData:FormData, nexturl:string){  //formerly userLogin
     const loginCreds = {
         identifier: formData.get('identifier')?.toString(),
         password: formData.get('password')?.toString()
     }
-    // let nextUrl="";
-    // if(!nexturl.nexturl){
-        
-    // }
-    // else{
-    // nextUrl = nexturl.nexturl.replace("!","/")
-    // }
     const loginValidationRes = validateLogin(loginCreds)
     if(loginValidationRes!==null){
         return loginValidationRes
     }
-    const loginRes  = await signinUser(loginCreds)
+    const loginRes  = await POSTSigninUser(loginCreds)
 
     if(loginRes.errorField){
         return{
@@ -53,40 +45,32 @@ export async function userLogin(formData:FormData, nexturl:string){
         if(nexturl===null){
             nexturl=""
         }
-        //nextUrl = decodeURIComponent(nextUrl)
-        console.log("nextUrl: "+nexturl)
         revalidatePath('/'+nexturl,'layout')
         redirect('/'+nexturl)
     }
 }
 
 export async function signoutUser(){
-    try{
-        await signUserOut()
-    }catch{
-
-    }
+    await POSTSignoutUser()
     deleteTokenFromCookie()
     deleteRefreshTokenFromCookie()
-    //revalidatePath('/')
     revalidatePath('/')
     redirect('/')
 
 }
 
-export async function createNewRecipe(formData: FormData){
+export async function createNewRecipe(formData: FormData){   
+    const tokenValidationRes = await validateToken()
     
-    const tokenIsValid = await validateToken()
-    
-    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
-        const tokenRefresh = await refreshToken()
-        if(tokenRefresh.error){
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
+        const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
             revalidatePath('/users/login?next='+encodeURIComponent('recipes/new'))
             redirect('/users/login?next='+encodeURIComponent('recipes/new'))
         }
     }
 
-    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
         deleteTokenFromCookie()
         deleteRefreshTokenFromCookie()
         revalidatePath('/users/login')
@@ -116,14 +100,11 @@ export async function createNewRecipe(formData: FormData){
     if(accessibility==="public"){
         isViewableByPublic = true
     }
-
     
     const prepTime = Number(formData.get('prep-time'))
     const cookTime = Number(formData.get('cook-time'))
     const servings = Number(formData.get('servings'))
     
-    
-    //console.log(JSON.stringify(instructions))
     let recipe = {
       title: formData.get('title')?.toString(),
       description: formData.get('description')?.toString(),
@@ -145,14 +126,14 @@ export async function createNewRecipe(formData: FormData){
     }
 
     console.log("All clear")
-    const recipeCreationResponse = await POSTNewRecipe(recipe)
+    const recipeCreationRes = await POSTCreateNewRecipe(recipe)
 
-    if(!recipeCreationResponse.uuid){ //if does not contain property, was unsuccessful
+    if(!recipeCreationRes.uuid){ //if does not contain property, was unsuccessful
         console.log("Recipe creation failed")
         return
     }
 
-    console.log("Instructions: "+JSON.stringify(recipeCreationResponse.instructions))
+    console.log("Instructions: "+JSON.stringify(recipeCreationRes.instructions))
 
     //Upload description image, if any
     const descriptionImage = formData.get('description-image') as File
@@ -170,36 +151,32 @@ export async function createNewRecipe(formData: FormData){
         }
         const descriptionImageBase64 = base64.bytesToBase64(descriptionImageU8)
         const descriptionImageFileExtension = descriptionImageName.slice(descriptionImageName.lastIndexOf('.'))
-        const descImageJson = {
-            recipeUUID: recipeCreationResponse.uuid,
+        const descriptionImageJson = {
+            recipeUUID: recipeCreationRes.uuid,
             filetype: "image",
             imageBase64: descriptionImageBase64,
             fileExtension: descriptionImageFileExtension,
             filename: descriptionImage.name
         }
     
-    await POSTDescriptionImage(descImageJson)
+    await POSTDescriptionImage(descriptionImageJson)
     }
 
     const instructionImageList = formData.getAll('instruction-image') as File[]
-    const createdInstructions = recipeCreationResponse.instructions
+    const createdInstructions = recipeCreationRes.instructions
 
     for(let j=0; j<instructionImageList.length; j++){
-        //console.log("Instruction image "+j+" "+instructionImageList[j].name)
         if(instructionImageList[j].size>0){
-            console.log("Uploading "+instructionImageList[j].name+"...")
             const instructionImageName = instructionImageList[j].name
             const imageReader = instructionImageList[j].stream().getReader()
             const instructionImageU8:number[]=[];
             while(true){
                 const {done,value} = await imageReader.read();
                 if(done) break;
-
                 instructionImageU8.push(...value);
             }
             const instructionImageBase64 = base64.bytesToBase64(instructionImageU8)
             const instructionImageFileExtension = instructionImageName.slice(instructionImageName.lastIndexOf('.'))
-            
             const instrImageJson = {
                 instructionUUID: createdInstructions[j].uuid,
                 imageBase64: instructionImageBase64,
@@ -211,20 +188,19 @@ export async function createNewRecipe(formData: FormData){
         }
     }
 
-    redirect('/recipes/'+recipeCreationResponse.uuid)
-
+    redirect('/recipes/'+recipeCreationRes.uuid)
 }
 
 export async function deleteRecipe(recipeUUID:string, recipeTitle:string){
-    const tokenIsValid = await validateToken()
-    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
-        const tokenRefresh = await refreshToken()
-        if(tokenRefresh.error){
+    const tokenValidationRes = await validateToken()
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
+        const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
             revalidatePath('/users/login?next='+encodeURIComponent('recipes/'+recipeUUID+'/edit'))
             redirect('/users/login?next='+encodeURIComponent('recipes/'+recipeUUID+'/edit'))
         }
     }
-    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
         deleteTokenFromCookie()
         deleteRefreshTokenFromCookie()
         revalidatePath('/users/login')
@@ -241,17 +217,17 @@ export async function deleteRecipe(recipeUUID:string, recipeTitle:string){
 }
 
 export async function updateRecipe(formData: FormData){
-    const tokenIsValid = await validateToken()
+    const tokenValidationRes = await validateToken()
     
-    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
-        const tokenRefresh = await refreshToken()
-        if(tokenRefresh.error){
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
+        const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
             revalidatePath("/users/login?next="+encodeURIComponent("recipes/"+formData.get('recipe-uuid')+"/edit"))
             redirect("/users/login?next="+encodeURIComponent("recipes/"+formData.get('recipe-uuid')+"/edit"))
         }
     }
 
-    if(tokenIsValid.success===false&&tokenIsValid.tryRefresh===false){
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
         deleteTokenFromCookie()
         deleteRefreshTokenFromCookie()
         revalidatePath('/users/login')
@@ -282,22 +258,22 @@ export async function updateRecipe(formData: FormData){
         isViewableByPublic = true
     }
 
-    //fileter out instruction image selection radiobutton options
+    //filter out instruction image selection radiobutton options
     const filteredKeys = Array.from(formData.keys()).filter(key => key.startsWith('instruction-image-option-'));
     // Retrieve values for the filtered keys
-    const values = filteredKeys.map(key => formData.getAll(key));
+    const options = filteredKeys.map(key => formData.getAll(key));
 
-    const instructionUrls = formData.getAll("instruction-image-url")
+    const instructionImageUrls = formData.getAll("instruction-image-url")
 
-    const filenames = formData.getAll("instruction-image-filename")
+    const instructionImageFilenames = formData.getAll("instruction-image-filename")
 
-    for(let i=0; i<values.length; i++){
-        if(values[i].toString()==="existing"){
+    for(let i=0; i<options.length; i++){
+        if(options[i].toString()==="existing"){
             const instruction = instructions[i]
             if(!instruction.images){
                 continue
             }
-            instruction.images.push({filename: filenames[i].toString(), url: instructionUrls[i].toString(), image_Number:1})
+            instruction.images.push({filename: instructionImageFilenames[i].toString(), url: instructionImageUrls[i].toString(), image_Number:1})
         }
     }
     const prepTime = Number(formData.get('prep-time'))
@@ -331,17 +307,13 @@ export async function updateRecipe(formData: FormData){
         //proper ui response
         return
     }  
-    if(resp.status===400||resp.status===404){
+    if(resp.status===400||resp.status===404||resp.status===401){
         notFound()
     }
-    if(resp.status===401){
-        notFound()
-    }    
     const recipeUpdateResponse = await resp.json()
 
-
     if(!recipeUpdateResponse.uuid){ //if does not contain property, was unsuccessful
-        console.log("Recipe creation failed")
+        //proper ui response
         return
     }
     //Upload description image, if any
@@ -350,7 +322,6 @@ export async function updateRecipe(formData: FormData){
     if(descriptionImageOption==="new"){
         const descriptionImage = formData.get('description-image') as File
         if(descriptionImage.size>0){
-            console.log("Uploading "+descriptionImage.name+"...")
             const descriptionImageName = descriptionImage.name
             const imageReader = descriptionImage.stream().getReader()
             const descriptionImageU8:number[] = [];
@@ -362,7 +333,7 @@ export async function updateRecipe(formData: FormData){
         }
         const descriptionImageBase64 = base64.bytesToBase64(descriptionImageU8)
         const descriptionImageFileExtension = descriptionImageName.slice(descriptionImageName.lastIndexOf('.'))
-        const descImageJson = {
+        const descriptionImageJson = {
             recipeUUID: recipeUpdateResponse.uuid,
             filetype: "image",
             imageBase64: descriptionImageBase64,
@@ -370,31 +341,28 @@ export async function updateRecipe(formData: FormData){
             filename: descriptionImage.name
         }
 
-        await POSTUploadUpdatedRecipeImage(descImageJson)
+        await POSTUploadUpdatedRecipeImage(descriptionImageJson)
     }
     }else if(descriptionImageOption==="existing"){
-        const descpImageUrl = formData.get("description-image-url")
-        const descpImageFilename = formData.get("description-image-filename")
+        const descriptionImageUrl = formData.get("description-image-url")
+        const descriptionImageFilename = formData.get("description-image-filename")
         const descImageJson={
             recipeUUID: recipeUpdateResponse.uuid,
             filetype: "image",
-            filename: descpImageFilename?.toString(),
-            url: descpImageUrl?.toString()
+            filename: descriptionImageFilename?.toString(),
+            url: descriptionImageUrl?.toString()
         }
-        console.log("descImageUrl: "+descpImageUrl)
         await POSTUpdatedDescriptionImage(descImageJson)
     }else if(descriptionImageOption==="none"){
         const recipeUUID = recipeUpdateResponse.uuid
         await DELETEDescriptionImage(recipeUUID)
     }
 
-
-
     const instructionImageList = formData.getAll('instruction-image') as File[]
     const createdInstructions = recipeUpdateResponse.instructions
 
     for(let j=0; j<instructionImageList.length; j++){
-        if(values[j].toString()==="new" && instructionImageList[j].size>0){
+        if(options[j].toString()==="new" && instructionImageList[j].size>0){
             console.log("Uploading "+instructionImageList[j].name+"...")
             const instructionImageName = instructionImageList[j].name
             const imageReader = instructionImageList[j].stream().getReader()
@@ -421,10 +389,6 @@ export async function updateRecipe(formData: FormData){
     }
 
     let oriImageUrls = formData.getAll('oriImageUrls')
-    // const oriImageUrlsJson = {
-    //     urlList: oriImageUrls
-    // }
-    //console.log("oriImageUrls: "+JSON.stringify(oriImageUrlsJson))
     await DELETEUnusedImages(oriImageUrls)
 
     revalidatePath('/recipes/'+recipe.uuid)
@@ -454,7 +418,7 @@ export async function createNewUser(formData: FormData){
     if(userValidationError){
         return userValidationError
     }
-    const res = await createUser(user)
+    const res = await POSTCreateNewUser(user)
 
     //if response has property called errorField, that means validation error
     if(res.errorField){
@@ -463,28 +427,24 @@ export async function createNewUser(formData: FormData){
             message:res.message
         } 
     }else{
-        console.log("Created new user:"+JSON.stringify(res))
         const loginCreds = {identifier: user.username, password: user.password}
-        const loginRes = await signinUser(loginCreds)
+        const loginRes = await POSTSigninUser(loginCreds)
 
         if(loginRes.errorField){
-            console.log("Error logging in: "+JSON.stringify(loginRes))
             redirect('/users/login')
         }else{
             putRefreshTokenIntoCookie(loginRes.refreshToken)
             putTokenIntoCookie(loginRes.accessToken)
-            revalidatePath('/', "layout")
+            revalidatePath('/')
             redirect('/')
         }
     }
 
 }
 
-
-
 export async function tokenRefresh(nexturl:string){
-    const tokenRefresh = await refreshToken()
-        if(tokenRefresh.error){
+    const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
             deleteRefreshTokenFromCookie()
             deleteTokenFromCookie()
             
@@ -497,14 +457,7 @@ export async function tokenRefresh(nexturl:string){
         redirect('/'+nexturl)
 }
 
-export async function redirectToLogin(nexturl:string){
-    
-    revalidatePath('/users/login/'+nexturl)
-    redirect('/users/login/'+nexturl)
-}
-
 export async function fetchUserRecipes(){
     const recipes = await GETUserRecipes()
-    console.log("GOTRecipes: "+ recipes)
     return recipes
 }

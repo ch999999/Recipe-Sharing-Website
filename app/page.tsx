@@ -20,7 +20,6 @@ export default async function Home() {
     recipeList = await GETUserRecipes()
   }
 
-  console.log(recipeList)
   
   if(refresh===false){
   return (

@@ -2,16 +2,29 @@
 
 import { useState } from "react"
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
+import { usePathname } from "next/navigation";
 
 export default function UtilityBar(){
     const [showPrintTooltip, setShowPrintTooltip] = useState(false);
+    const [copyText, setCopyText] = useState("Copy Link")
+    const pathname = usePathname()
+
+    function revertText(){
+        setCopyText("Copy Link")
+    }
+
+    function changeText(){
+        setCopyText("Copied ✓")
+    }
 
     return(
     <div className="navbar min-h-[20px] sticky top-[68px] bg-gray-100 z-[9] border-t border-gray-200 print:hidden">
         <div className="flex-1">
             
         </div>
+        
         <div className="flex-none -mt-3 -mb-3">
+            <ul className="menu menu-horizontal px-1"><li><button onClick={()=>{navigator.clipboard.writeText(window.location.host+pathname); changeText()}} onMouseLeave={()=>setTimeout(()=>revertText(), 3000)}>{copyText}</button></li></ul>
             <ul className="menu menu-horizontal px-1"><li><button onClick={()=>print()}>Print</button></li></ul>
             <ul><li>
             <div className="relative">

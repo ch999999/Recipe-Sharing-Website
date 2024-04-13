@@ -13,9 +13,9 @@ export function HomeButton(){
 
 export async function UserButtons(){
 
-    const tokenIsValid = await validateToken()
+    const tokenValidationRes = await validateToken()
 
-    if(!tokenIsValid.success){
+    if(!tokenValidationRes.success){
     return(
     <>
     <ul className="hidden menu menu-horizontal px-1 sm:inline"><li><Link href="/users/signup">Create Recipe</Link></li></ul>

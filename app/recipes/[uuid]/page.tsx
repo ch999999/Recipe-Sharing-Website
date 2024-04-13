@@ -6,15 +6,14 @@ import NonexistantRecipeError from "@/app/ui/errors/nonexistantRecipe"
 import Loading from "@/app/ui/intermediaries/loading"
 import { Suspense } from "react"
 import RefreshRetry from "@/app/ui/intermediaries/refreshRetry"
-import { Recipe } from "@/app/lib/definitions"
 
 export default async function Page({params}:{params:{uuid:string}}){
     const uuid = params.uuid
     
-    const tokenIsValid = await validateToken()
+    const tokenValidationRes = await validateToken()
     let refresh = false
 
-    if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
         refresh = true
     }
     if(refresh===false){
@@ -36,8 +35,7 @@ export default async function Page({params}:{params:{uuid:string}}){
         console.log(recipeData)
         return(
             <Suspense fallback={<Loading/>}>
-            <View recipeData = {recipeData} uuid={uuid}>
-    
+            <View recipeData = {recipeData} uuid={uuid}>        
             </View>
             </Suspense>
         )
