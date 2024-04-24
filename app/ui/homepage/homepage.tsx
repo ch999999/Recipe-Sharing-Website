@@ -5,7 +5,7 @@ import PlannedChanges from "./plannedChanges";
 import UserRecipes from "./userRecipes";
 import { Recipe } from "@/app/lib/definitions";
 
-export default function HomePage({recipeList, isLoggedIn}:{recipeList:Recipe[]; isLoggedIn:boolean}){
+export default function HomePage({isLoggedIn}:{isLoggedIn:boolean}){
     if(!isLoggedIn){
         return (
         <>
@@ -14,7 +14,7 @@ export default function HomePage({recipeList, isLoggedIn}:{recipeList:Recipe[]; 
         <PlannedChanges></PlannedChanges>
         </>
         )
-    }else if(isLoggedIn && recipeList.length<=0){
+    }else{
         return (
             <>
             <WelcomeNote></WelcomeNote>
@@ -22,14 +22,6 @@ export default function HomePage({recipeList, isLoggedIn}:{recipeList:Recipe[]; 
             <PlannedChanges></PlannedChanges>
             </>
             )
-    }else{
-        return (
-            <>
-                <UserRecipes recipeList={recipeList}></UserRecipes>
-                <HowToCreate isLoggedIn={true}></HowToCreate>
-                <PlannedChanges></PlannedChanges>
-            </>
-        )
     }
 
 }

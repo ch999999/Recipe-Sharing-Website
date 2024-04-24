@@ -6,6 +6,25 @@ import NonexistantRecipeError from "@/app/ui/errors/nonexistantRecipe"
 import Loading from "@/app/ui/intermediaries/loading"
 import { Suspense } from "react"
 import RefreshRetry from "@/app/ui/intermediaries/refreshRetry"
+import { ResolvingMetadata, Metadata } from "next"
+
+export async function generateMetadata({params}:{params:{uuid:string}}):Promise<Metadata>{
+    const uuid = params.uuid
+  // fetch data
+  const resp = await GETRecipe(uuid)
+  if(resp?.status===200||resp?.status===204){
+  const res = await resp?.json()
+  return {
+    title: res.recipe.title,
+    description: res.recipe.description
+    }
+  }else{
+    return{
+        title: "RecipeKamu",
+        description: "This is a simple website that aims to provide users with the ability to easily create recipes, then share them via a simple link, or simply keep the link for their own reference."
+    }
+  }
+}
 
 export default async function Page({params}:{params:{uuid:string}}){
     const uuid = params.uuid

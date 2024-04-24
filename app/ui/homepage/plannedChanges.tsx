@@ -15,7 +15,7 @@ export default function PlannedChanges(){
                             <div className=" float-left text-center">●</div>
                         </td>
                         <td>
-                            <p>Multi-part recipes</p>
+                            <p>Multi-part recipes. You will be able to separate your recipe into multiple parts, eg. part 1: marination, part 2: cooking rice, part 3: cooking chicken, etc. </p>
                         </td>
                     </tr>
                     <tr>
@@ -66,6 +66,7 @@ export default function PlannedChanges(){
                             <p>Share directly to social media, rather than having to manually copy and paste recipe link</p>
                         </td>
                     </tr>
+
                     <tr>
                         <td className="min-w-5 align-top">
                             <div className="float-left text-center">●</div>

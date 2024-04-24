@@ -70,7 +70,9 @@ export type User = {
     firstname?:string,
     lastname?:string,
     email?:string,
-    password?:string
+    password?:string,
+    createdDate?:Date,
+    lastModifiedDate?:Date
 }
 
 export type Login = {

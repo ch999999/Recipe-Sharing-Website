@@ -1,8 +1,8 @@
 'use server'
 
-import { POSTCreateNewUser, POSTSignoutUser } from '../api/users'
+import { PATCHUserDetails, PATCHUserPassword, POSTCreateNewUser, POSTSignoutUser } from '../api/users'
 import { revalidatePath } from 'next/cache'
-import { notFound, redirect } from 'next/navigation'
+import { notFound, permanentRedirect, redirect } from 'next/navigation'
 import { POSTSigninUser } from '../api/users'
 import { deleteRefreshTokenFromCookie, getRefreshTokenFromCookie, putRefreshTokenIntoCookie, putTokenIntoCookie } from './auth'
 import { deleteTokenFromCookie } from './auth'
@@ -12,10 +12,11 @@ import validateRecipe from './validators/RecipeValidator'
 import * as base64 from 'byte-base64'
 import { POSTDescriptionImage } from '../api/recipes'
 import validateLogin from './validators/loginValidator'
-import validateNewUser from './validators/newUserValidator'
+import validateNewUser, { passwordIsValid } from './validators/newUserValidator'
 import { POSTRefreshTokens } from '../api/users'
 import { validateToken } from './auth'
 import { Ingredient, Instruction, Note } from './definitions'
+import { RedirectType } from 'next/navigation'
 
 export type State = {
     errorField?: string | null;
@@ -393,7 +394,6 @@ export async function updateRecipe(formData: FormData){
 
     revalidatePath('/recipes/'+recipe.uuid)
     redirect('/recipes/'+recipe.uuid)
-    
 }
 
 export async function goToEditRecipe(uuid:string){
@@ -440,6 +440,102 @@ export async function createNewUser(formData: FormData){
         }
     }
 
+}
+
+export async function updateUserDetails(formData:FormData){
+    const tokenValidationRes = await validateToken()
+    
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
+        const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
+            //revalidatePath("/users/login?next="+encodeURIComponent("users/profile/change-details"))
+            redirect("/users/login?next="+encodeURIComponent("users/profile/change-details"))
+        }
+    }
+
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        revalidatePath('/users/login')
+        redirect('/users/login')
+    }
+    const user = {
+        username: formData.get('username')?.toString(),
+        email: formData.get('email')?.toString(),
+        firstname: formData.get('firstname')?.toString(),
+        lastname: formData.get('lastname')?.toString(),
+        password: formData.get('password')?.toString()
+    } 
+    const userValidationError = validateNewUser(user)
+    if(userValidationError){
+        return userValidationError
+    }
+    const res = await PATCHUserDetails(user)
+    if(res.errorField){
+        return{
+            errorField:res.errorField,
+            message:res.message
+        } 
+    }else{
+            console.log(res)
+            putTokenIntoCookie(res.token)
+            revalidatePath('/users/profile')
+            redirect('/users/profile')
+        
+    }
+}
+
+export async function updateUserPassword(formData:FormData){
+    const tokenValidationRes = await validateToken()
+    
+    if(tokenValidationRes.tryRefresh&&tokenValidationRes.tryRefresh===true){
+        const tokenRefreshRes = await POSTRefreshTokens()
+        if(tokenRefreshRes.error){
+            //revalidatePath("/users/login?next="+encodeURIComponent("users/profile/change-details"))
+            redirect("/users/login?next="+encodeURIComponent("users/profile/change-password"))
+        }
+    }
+
+    if(tokenValidationRes.success===false&&tokenValidationRes.tryRefresh===false){
+        deleteTokenFromCookie()
+        deleteRefreshTokenFromCookie()
+        revalidatePath('/users/login')
+        redirect('/users/login')
+    }
+
+    const password = formData.get("password")?.toString()
+    const newPassword = formData.get("new-password")?.toString()
+    const newPasswordConfirmation = formData.get("new-password-confirmation")?.toString()
+    if(!password||password===""){
+        return {
+            errorField: "password",
+            message: "Current password is required"
+        }
+    }
+    if(!newPassword||!passwordIsValid(newPassword)){
+        return {
+            errorField: "new-password",
+            message:"Password must be at least 8 characters long and contain both alphabets and numeric characters"
+        }
+    }
+    if(newPassword!==newPasswordConfirmation){
+        return {
+            errorField: "new-password-confirmation",
+            message:"Password and confirm password does not match"
+        }
+    }
+
+    const res = await PATCHUserPassword([password, newPassword])
+    if(res.errorField){
+        return{
+            errorField:res.errorField,
+            message:res.message
+        } 
+    }else{
+            // revalidatePath('/users/profile')
+            // redirect('/users/profile')
+            redirect('/users/profile/change-password/success')
+    }
 }
 
 export async function tokenRefresh(nexturl:string){

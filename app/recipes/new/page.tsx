@@ -3,6 +3,12 @@ import RefreshRetry from "@/app/ui/intermediaries/refreshRetry"
 import Form from "@/app/ui/recipes/recipe-creation-form"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: "RecipeKamu | Create Recipe",
+    description: "This is a simple website that aims to provide users with the ability to easily create recipes, then share them via a simple link, or simply keep the link for their own reference. Create your recipe.",
+  };
 
 export default async function Page(){
     const tokenIsValid = await validateToken()

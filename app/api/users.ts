@@ -125,3 +125,61 @@ export async function POSTSignoutUser(){ //formerly signUserOut()
 
     }
 }
+
+export async function GETUserDetails(){
+    try{
+        const token = await getTokenFromCookie()
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/User/profile",{
+                method: "GET",
+                headers:{
+                
+                    "Authorization": "Bearer "+token
+                }
+            }
+        )
+        return resp
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function PATCHUserDetails(user:User){
+    try{
+        const token = await getTokenFromCookie()
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/User/profile/update",{
+                method: "PATCH",
+                headers:{
+                    "Authorization": "Bearer "+token,
+                    "Content-Type":"application/json"
+                },
+                body: JSON.stringify(user)
+            }
+        )
+        const res = await resp.json()
+        return res
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export async function PATCHUserPassword(passwords:string[]){
+    try{
+        const token = await getTokenFromCookie()
+        const resp = await fetch(
+            process.env.BACKEND_BASE_URL+"/api/User/profile/update-password",{
+                method: "PATCH",
+                headers:{
+                    "Authorization": "Bearer "+token,
+                    "Content-Type":"application/json"
+                },
+                body: JSON.stringify(passwords)
+            }
+        )
+        const res = await resp.json()
+        return res
+    }catch(error){
+        console.log(error)
+    }
+}
