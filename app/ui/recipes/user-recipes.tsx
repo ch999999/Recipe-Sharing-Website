@@ -17,7 +17,7 @@ function utcToLocal(utcDateTimeString:Date|undefined){
 
 export default function UserRecipes({recipeList}:{recipeList:Recipe[]}){
     function copyToClipboard(uuid:string){
-        navigator.clipboard.writeText("localhost:3000"+"/recipes/"+uuid)
+        navigator.clipboard.writeText(process.env.NEXT_PUBLIC_DOMAIN+"/recipes/"+uuid)
     }
 
     if(recipeList.length>0){

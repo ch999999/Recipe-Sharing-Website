@@ -18,7 +18,8 @@ type InstructionFormData = {
     imageButtonText?: string, 
     imageErrorText?: string, 
     existingImageFileName?: string, 
-    existingImageUrl?: string
+    existingImageUrl?: string,
+    imageSetting:string
 }
 
 type ImageData = {
@@ -98,7 +99,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
     let initialDescriptionImageSetting = "none" //default setting for description image
     let initialDescriptionImage:ImageData = {filename:"", url:""} //default values for description image
 
-    let initialInstructionImageSettings:string[] = []
+    //let initialInstructionImageSettings:string[] = []
     let initialInstructionImages:ImageData[] = []
     let oriImageList:ImageFormData[] = []
 
@@ -161,7 +162,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
         })
         oriInstructions.forEach(instruction=>{
             if(!instruction.images||instruction.images.length<=0){
-                initialInstructionImageSettings.push("none")
+                //initialInstructionImageSettings.push("none")
                 initialInstructionImages.push({filename:"", url:""})
                 let existingFileName:string|undefined =""
                 let existingUrl:string|undefined = ""
@@ -169,12 +170,12 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                     existingFileName = oriImageList[0].filename
                     existingUrl = oriImageList[0].url
                 }
-                oriInstructionsList.push({id:instructionCount, order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen:false, imageButtonText:"Choose Image", imageErrorText:"",existingImageFileName:existingFileName, existingImageUrl:existingUrl})
+                oriInstructionsList.push({id:instructionCount, order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen:false, imageButtonText:"Choose Image", imageErrorText:"",existingImageFileName:existingFileName, existingImageUrl:existingUrl, imageSetting:"none"})
                 instructionCount++
             }else{
-                initialInstructionImageSettings.push("existing")
+                //initialInstructionImageSettings.push("existing")
                 initialInstructionImages.push({filename:instruction.images[0].filename,url:instruction.images[0].url})
-                oriInstructionsList.push({id:instructionCount, order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen:false, imageButtonText: "Repick Image",imageErrorText:"", existingImageFileName:instruction.images[0].filename, existingImageUrl: instruction.images[0].url})
+                oriInstructionsList.push({id:instructionCount, order:instruction.sequence_Number, description:instruction.description, imageFileName:"No file chosen", fileChosen:false, imageButtonText: "Repick Image",imageErrorText:"", existingImageFileName:instruction.images[0].filename, existingImageUrl: instruction.images[0].url, imageSetting:"existing"})
                 instructionCount++  
             }
         })
@@ -268,7 +269,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
         }
         setInstructions([
             ...instructions,
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: imageFileName, existingImageUrl: imageUrl,imageErrorText:""}
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName: imageFileName, existingImageUrl: imageUrl,imageErrorText:"", imageSetting:"none"}
         ])
         instructionCount++;
         
@@ -388,6 +389,20 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
     function updateDescriptionImageExistingUrl(imageIndex:number){
         const newExistingImage = {filename: oriImageList[imageIndex].filename, url: oriImageList[imageIndex].url}
         setExistingDescriptionImage(newExistingImage)
+    }
+
+    function updateInstructionImageSetting(Id:number, newSetting:string){
+        const nextInstructions = instructions.map(i=>{
+            if(i.id===Id){
+                return{
+                    ...i,
+                    imageSetting: newSetting
+                }
+            }else{
+                return i
+            }
+        })
+        setInstructions(nextInstructions)
     }
 
     function updateInstructionImageExistingUrl(Id:number, imageIndex:number){
@@ -535,7 +550,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
             imageUrl = oriImageList[0].url
         }
         const nextInstructions = [...instructions.slice(0, indexToAddBelow+1),
-            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName:imageFileName, existingImageUrl: imageUrl},
+            {id: instructionCount, description:"", order: instructions.length+1, imageFileName:"No file chosen", imageButtonText:"Choose Image",fileChosen: false, existingImageFileName:imageFileName, existingImageUrl: imageUrl, imageSetting:"none"},
         ...instructions.slice(indexToAddBelow+1)]
 
         for(let j=0; j<nextInstructions.length; j++){
@@ -623,6 +638,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
     const instructionImagesMiniRef = useRef<Map<number, HTMLImageElement>|null>(null)
     const instructionImagesPopupRef = useRef<Map<number, HTMLElement>|null>(null)
 
+    const [descriptionImageSetting, setDescriptionImageSetting] = useState(initialDescriptionImageSetting)
     const [descriptionImagePrompts, setDescriptionImagePrompts] = useState({name: "No file chosen", fileChosen: false, buttonText: "Choose Image"})
     const [descriptionImageError, setDescriptionImageError] = useState("")
 
@@ -654,8 +670,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                         <table>
                             <tbody>
                                 {oriImageList.length>0 &&
-                                <tr>
-                                    <td className="align-top"><input defaultChecked={initialInstructionImageSettings[i.order-1]==="existing" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
+                                <tr className={i.imageSetting==="existing" ? "bg-green-100" : ""}>
+                                    <td className="align-top"><input checked={i.imageSetting==="existing" ? true : false} onChange={(e)=>{if(e.target.checked===true){updateInstructionImageSetting(i.id, "existing")}}} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-existing-"+i.id} value="existing"></input></td>
                                     <td>
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                         <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing:</label>
@@ -676,8 +692,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                     </td>
                                 </tr>
                                 }
-                                <tr>
-                                    <td className="align-top"><input className="sm:mt-3" defaultChecked={initialInstructionImageSettings[i.order-1]==="new" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-new-"+i.id} value="new"></input></td>
+                                <tr className={i.imageSetting==="new" ? "bg-blue-100" : ""}>
+                                    <td className="align-top"><input className="sm:mt-3" checked={i.imageSetting==="new" ? true : false} onChange={(e)=>{if(e.target.checked===true){updateInstructionImageSetting(i.id, "new")}}} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-new-"+i.id} value="new"></input></td>
                                     <td>
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                     <label className="ml-2 mr-5 sm:mt-2" htmlFor={"instruction-image-new-"+i.id}>Choose from device: </label>
@@ -691,8 +707,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                     </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td className=""><input defaultChecked={i.order>initialInstructionImageSettings.length|| initialInstructionImageSettings[i.order-1]==="none" ? true : false} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-none-"+i.id} value="none"></input></td>
+                                <tr className={i.imageSetting==="none" ? "bg-gray-200" : ""}>
+                                    <td className=""><input checked={i.imageSetting==="none" ? true : false} onChange={(e)=>{if(e.target.checked===true){updateInstructionImageSetting(i.id, "none")}}} type="radio" name={"instruction-image-option-"+i.id} id={"instruction-image-none-"+i.id} value="none"></input></td>
                                     <td><label className="ml-2" htmlFor={"instruction-image-none-"+i.id}>None</label></td>
                                 </tr>
                             </tbody>
@@ -773,6 +789,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
 
     return(
         <>
+            <h1 className="text-xl font-bold text-center">{"Edit "+oriTitle}</h1>
             <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
                 <div className="flex flex-row">
@@ -814,8 +831,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                     <table className="table-auto">
                         <tbody>
                             {oriImageList.length>0 &&
-                            <tr>
-                                <td className="align-top"><input defaultChecked={initialDescriptionImageSetting==="existing" ? true : false} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input></td>
+                            <tr className={descriptionImageSetting==="existing" ? "bg-green-100" : ""}>
+                                <td className="align-top"><input checked={descriptionImageSetting==="existing" ? true : false} onChange={(e)=>{if(e.target.checked===true){setDescriptionImageSetting("existing")}}} type="radio" name="description-image-option" id="description-image-existing" value="existing"></input></td>
                                 <td>
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                         <label className="ml-2" htmlFor="description-image-existing">Choose from existing:</label>
@@ -834,8 +851,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                 </td>
                             </tr>
                             }
-                            <tr>
-                                <td className="align-top"><input className="sm:mt-3" defaultChecked={initialDescriptionImageSetting==="new" ? true : false} type="radio" name="description-image-option" id="description-image-new" value="new"></input></td>
+                            <tr className={descriptionImageSetting==="new" ? "bg-blue-100" : ""}>
+                                <td className="align-top"><input className="sm:mt-3" checked={descriptionImageSetting==="new" ? true : false} onChange={(e)=>{if(e.target.checked===true){setDescriptionImageSetting("new")}}} type="radio" name="description-image-option" id="description-image-new" value="new"></input></td>
                                 <td>
                                 <div className="mb-1 flex flex-col sm:flex-row">
                                 <label className="ml-2 mr-5 sm:mt-2" htmlFor="description-image-new">Choose from device: </label>
@@ -849,8 +866,8 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                 </div>
                                 </td>
                             </tr>
-                            <tr>
-                                <td className=""><input defaultChecked={initialDescriptionImageSetting=="none" ? true : false} type="radio" name="description-image-option" id="description-image-none" value="none"></input></td>
+                            <tr className={descriptionImageSetting==="none" ? "bg-gray-200" : ""}>
+                                <td className=""><input checked={descriptionImageSetting==="none" ? true : false} onChange={(e)=>{if(e.target.checked===true){setDescriptionImageSetting("none")}}} type="radio" name="description-image-option" id="description-image-none" value="none"></input></td>
                                 <td><label className="ml-2" htmlFor="description-image-none">None</label></td>
                             </tr>
                         </tbody>

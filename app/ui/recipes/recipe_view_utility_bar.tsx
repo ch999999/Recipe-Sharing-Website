@@ -24,7 +24,7 @@ export default function UtilityBar(){
         </div>
         
         <div className="flex-none -mt-3 -mb-3">
-            <ul className="menu menu-horizontal px-1"><li><button onClick={()=>{navigator.clipboard.writeText(window.location.host+pathname); changeText()}} onMouseLeave={()=>setTimeout(()=>revertText(), 3000)}>{copyText}</button></li></ul>
+            <ul className="menu menu-horizontal px-1"><li><button onClick={()=>{navigator.clipboard.writeText(process.env.NEXT_PUBLIC_DOMAIN+pathname); changeText()}} onMouseLeave={()=>setTimeout(()=>revertText(), 3000)}>{copyText}</button></li></ul>
             <ul className="menu menu-horizontal px-1"><li><button onClick={()=>print()}>Print</button></li></ul>
             <ul><li>
             <div className="relative">

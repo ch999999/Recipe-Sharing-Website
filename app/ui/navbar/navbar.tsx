@@ -79,7 +79,7 @@ export default function NavBar({isLoggedIn}:{isLoggedIn:boolean}){
     <>
     <div className="navbar sticky top-0 bg-gray-100 z-10 print:hidden">
         <div className="flex-1">
-            <Link href='/' className="btn btn-ghost normal-case text-xl" onClick={()=>setShowMobileMenu(false)}>RecipeKamu</Link>
+            <Link href='/' className="btn btn-ghost normal-case text-xl" onClick={()=>setShowMobileMenu(false)}>{process.env.NEXT_PUBLIC_WEBSITE_NAME}</Link>
         </div>
         <div className="flex-none">
             <NavButtons></NavButtons>
