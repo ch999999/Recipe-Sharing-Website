@@ -9,6 +9,25 @@ import NonexistantRecipeError from "@/app/ui/errors/nonexistantRecipe";
 import CannotModifyRecipeError from "@/app/ui/errors/cannotModifyRecipeError";
 import { Suspense } from "react";
 import Loading from "@/app/ui/intermediaries/loading";
+import { Metadata } from "next";
+
+export async function generateMetadata({params}:{params:{uuid:string}}):Promise<Metadata>{
+    const uuid = params.uuid
+  // fetch data
+  const resp = await GETRecipe(uuid)
+  if(resp?.status===200||resp?.status===204){
+  const res = await resp?.json()
+  return {
+    title: "Editing "+ res.recipe.title,
+    description: "This is a simple website that aims to provide users with the ability to easily create recipes, then share them via a simple link, or simply keep the link for their own reference. Edit your recipe"
+    }
+  }else{
+    return{
+        title: "RecipeKamu",
+        description: "This is a simple website that aims to provide users with the ability to easily create recipes, then share them via a simple link, or simply keep the link for their own reference."
+    }
+  }
+}
 
 export default async function Page({params}:{params:{uuid:string}}){
     const uuid = params.uuid

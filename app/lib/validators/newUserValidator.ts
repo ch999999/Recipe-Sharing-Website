@@ -39,7 +39,7 @@ export default function validateNewUser(user:User){
     return null
 }
 
-function passwordIsValid(password:string){
+export function passwordIsValid(password:string){
     if(password.length<8){
         return false
     }

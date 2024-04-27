@@ -102,8 +102,9 @@ export default function Form(){
                                 <button className="btn-sm mr-2" type="button" onClick={()=>moveInstructionUp(i.id)}><ArrowUpIcon className="w-4"></ArrowUpIcon></button>
                                 <button className="btn-sm" type="button" onClick={()=>moveInstructionDown(i.id)}><ArrowDownIcon className="w-4"></ArrowDownIcon></button>
                         </div>
+                        <input className="hidden" ref={(node:HTMLInputElement)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
                     </td>
-                    <td className="hidden border border-gray-300 w-[260px]">
+                    {/* <td className="hidden border border-gray-300 w-[260px]">
                     <div className="w-[100px] flex flex-row">
                         <input ref={(node:HTMLInputElement)=>{const map=getMap(); if(node){map.set(i.id, node);}else{map.delete(i.id)}}} onChange={()=>updateInstructionImage(i.id)} hidden type="file" name="instruction-image" id={"instruction-image-"+i.id}/>
                         <label htmlFor={"instruction-image-"+i.id} className="relative btn w-30">{i.imageButtonText}</label>
@@ -111,7 +112,7 @@ export default function Form(){
                         {i.fileChosen && <button type="button" className="ml-2 text-red-700 text-3xl" onClick={()=>removeInstructionImageFile(i.id)}>&times;</button>}
                     </div>
                     {i.imageErrorText!="" && <p className="mt-2 ml-2 text-sm text-red-500">{i.imageErrorText}</p>}
-                    </td>
+                    </td> */}
                     <td className=" hidden border border-gray-300 md:table-cell w-[80px]">
                     <div className="flex flex-row float-right">
                                 <button className="btn-sm -mt-1 mr-2" type="button" onClick={()=>addInstructionBelow(i.id)}><p className="text-green-500 text-2xl">+</p></button>
@@ -512,7 +513,7 @@ export default function Form(){
             <h1 id="page-title" className=" mb-3 text-center text-2xl font-bold">Create your recipe</h1>
             <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await createNewRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>{/*w-300px*/}
                 <div className="flex flex-row">
-                    <label id="title-label" className="label mr-[7px]" htmlFor="title"><span className=" text-base font-bold">Title<span className={"text-base text-red-600"}>*</span></span></label>
+                    <label id="title-label" className="label mr-[7px]" htmlFor="title-input"><span className=" text-base font-bold">Title<span className={"text-base text-red-600"}>*</span></span></label>
                     <input id="title-input" type="text" name="title" aria-describedby="title-error" className="h-10 input w-96 outline outline-1 outline-gray-400"/>
                     <div className="relative mt-2">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowTitleTooltip(true)} onMouseLeave={()=>setShowTitleTooltip(false)}></InformationCircleIcon>
@@ -523,7 +524,7 @@ export default function Form(){
                 {state!=null && state.errorField==="title" && <div id="title-error" aria-live="polite" aria-atomic="true"><p className="mt-2 ml-14 text-sm text-red-500">{state.message}</p></div>}
                 <div className="form-control">
                     <div className="flex flex-row">
-                    <label className="label" htmlFor="description"><span className="text-base font-bold">Description<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label" htmlFor="description-input"><span className="text-base font-bold">Description<span className="text-base text-red-600">*</span></span></label>
                     <div className="relative mt-2">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionTooltip(true)} onMouseLeave={()=>setShowDescriptionTooltip(false)}></InformationCircleIcon>
                         {showDescriptionTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
@@ -535,7 +536,7 @@ export default function Form(){
                 {state!=null && state.errorField==="description" && <div id="description-error" aria-live="polite" aria-atomic="true"><p className="mt-2 text-sm text-red-500">{state.message}</p></div>}
                 <div className="">
                     <div className="flex flex-row">
-                    <label className="label" ><span className="text-base font-bold">Description Image:</span></label>
+                    <label htmlFor="description-image" className="label" ><span className="text-base font-bold">Description Image:</span></label>
                     <div className="relative mt-2">
                         <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowDescriptionImageTooltip(true)} onMouseLeave={()=>setShowDescriptionImageTooltip(false)}></InformationCircleIcon>
                         {showDescriptionImageTooltip && <div className="absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
@@ -553,7 +554,7 @@ export default function Form(){
 
                 <section className=" lg:flex lg:flex-row lg:content-between">
                 <div className="flex flex-row">
-                    <label className="label mr-3" htmlFor="prep-time"><span className="text-base font-bold">Preperation <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label mr-3" htmlFor="prep_time-input"><span className="text-base font-bold">Preperation <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
                     <div className="flex flex-col">
                     <input id="prep_time-input" aria-describedby="prep_time-error" type="number" name="prep-time" className="mt-2 w-36 input outline outline-1 outline-gray-400"/>{/*w-36 */}
                     {state!=null && state.errorField==="prep_time" && <div id="prep_time-error" aria-live="polite" aria-atomic="true"><p className="text-right text-xs text-red-500">{state.message}</p></div>}
@@ -561,7 +562,7 @@ export default function Form(){
                 </div>
                 
                 <div className=" flex flex-row ">
-                    <label className="label mr-3 md:mr-[63px] lg:mr-3 lg:ml-3" htmlFor="cook-time"><span className="text-base font-bold">Cook <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label mr-3 md:mr-[63px] lg:mr-3 lg:ml-3" htmlFor="cook_time-input"><span className="text-base font-bold">Cook <br className="md:hidden"></br> Time(minutes)<span className="text-base text-red-600">*</span></span></label>
                     <div className="flex flex-col">
                     <input id="cook_time-input" aria-describedby="cook_time-error" type="number" name="cook-time" className="mt-2 w-36 input outline outline-1 outline-gray-400"/>
                     {state!=null && state.errorField==="cook_time" && <div id="cook_time-error" aria-live="polite" aria-atomic="true"><p className="text-right text-xs text-red-500">{state.message}</p></div>}
@@ -569,7 +570,7 @@ export default function Form(){
                 </div>
                 
                 <div className="mt-2 flex flex-row lg:float-right">
-                    <label className="label mr-14 md:mr-[150px] lg:mr-3 lg:ml-3" htmlFor="servings"><span className=" text-base font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label mr-14 md:mr-[150px] lg:mr-3 lg:ml-3" htmlFor="servings-input"><span className=" text-base font-bold">Servings<span className="text-base text-red-600">*</span></span></label>
                     <div>
                     <input id="servings-input" aria-describedby="servings-error" type="number" name="servings" className=" w-36 input outline outline-1 outline-gray-400"/>
                     {state!=null && state.errorField==="servings" && <div id="servings-error" aria-live="polite" aria-atomic="true"><p className="text-right text-xs mt-1 text-red-500">{state.message}</p></div>}
@@ -581,7 +582,7 @@ export default function Form(){
 
                 <div className="pt-2 border rounded-md border-gray-300 mt-2 flex flex-col">
                     <div className=" flex flex-row">
-                    <label className="label" htmlFor="ingredients"><span className="text-base font-bold">Ingredients<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label"><span className="text-base font-bold">Ingredients<span className="text-base text-red-600">*</span></span></label>
                     <button type="button" className="ml-2 w-36 btn bg-gray-100" onClick={addIngredient}>Add Ingredient</button>
                     <div className="relative mt-3">
                     <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowIngredientTooltip(true)} onMouseLeave={()=>setShowIngredientTooltip(false)}></InformationCircleIcon>
@@ -622,7 +623,7 @@ export default function Form(){
 
                 <div className="pt-2 border rounded-md border-gray-300 mt-2 form-control">
                     <div className="mt-3 flex flex-row">
-                    <label className="label" htmlFor="instructions"><span className="text-base font-bold">Instructions<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label"><span className="text-base font-bold">Instructions<span className="text-base text-red-600">*</span></span></label>
                     <button type="button" className="ml-2 w-36 btn bg-gray-100" onClick={addInstruction}>Add Instruction</button>
                     <div className="relative mt-3">
                     <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowInstructionTooltip(true)} onMouseLeave={()=>setShowInstructionTooltip(false)}></InformationCircleIcon>
@@ -664,7 +665,7 @@ export default function Form(){
                 </div>
                 <div className=" p-1 border rounded-md border-gray-200 mt-3 flex flex-col">
                     <div className="flex flex-row">
-                    <label className="label mr-3" htmlFor="notes"><span className="text-base font-bold">Notes</span></label>
+                    <label className="label mr-3"><span className="text-base font-bold">Notes</span></label>
                     <button type="button" className=" w-36 btn" onClick={addNote}>Add Note</button>
                     <div className="relative mt-3">
                     <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowNotesTooltip(true)} onMouseLeave={()=>setShowNotesTooltip(false)}></InformationCircleIcon>
@@ -688,7 +689,7 @@ export default function Form(){
                 </div>
                 
                 <div className="flex flex-row">
-                    <label className="label mr-[7px]" htmlFor="accessibility"><span className=" text-base font-bold">Accessibility<span className="text-base text-red-600">*</span></span></label>
+                    <label className="label mr-[7px]"><span className=" text-base font-bold">Accessibility<span className="text-base text-red-600">*</span></span></label>
                     <div className="flex flex-col mt-6">
                     <div className="flex flex-row">
                         <input type="radio" name="accessibility" id="private" value="private" className="mr-2"/><label className=" mt-0.5" htmlFor="private">Private</label>

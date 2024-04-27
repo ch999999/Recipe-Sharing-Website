@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
+import { EyeIcon } from "@heroicons/react/24/outline";
+import {EyeSlashIcon} from "@heroicons/react/24/outline";
 
 function SubmitButton(){
     const status = useFormStatus()
@@ -16,6 +18,7 @@ export default function Form(){
     
     const initialState = {errorField:null, message:null}
     const [state, setState] = useState(initialState)
+    const [fieldType, setFieldType] = useState("password")
 
     function IdentifierError(){
         if(state!=null && state.errorField=="identifier"){
@@ -43,7 +46,7 @@ export default function Form(){
     return (
         <>
         <div className="border border-t-0 rounded-md bg-gray-50 p-4 md:p-6 sm:max-w-[508px] lg:w-[55%] mx-auto">
-            <p className="italic text-center">Sign in to create recipes and access private recipes</p>
+            <p className="italic text-center">Sign in to continue creating and sharing recipes</p>
             <form action={async(e)=>{if(nextPage===null){nextPage=""} setState(await signinUser(e, nextPage))}}>
             <div className="form-control w-full">
             <label className="label" htmlFor="identifier">
@@ -51,6 +54,7 @@ export default function Form(){
             </label>
             <input
                 type="text"
+                id="identifier"
                 name="identifier"
                 placeholder=""
                 className="input input-bordered w-full"
@@ -64,13 +68,17 @@ export default function Form(){
             <label className="label" htmlFor="password">
                 <span className="label-text">Password</span>
             </label>
+            <div className="flex flex-row">
             <input
-                type="password"
+                type={fieldType}
+                id="password"
                 name="password"
                 placeholder=""
-                className="input input-bordered w-full"
+                className="input input-bordered w-full mr-2"
                 aria-describedby="password-error"  
             />
+            {fieldType==="password" ? <button type="button" onClick={()=>setFieldType("text")}><EyeIcon className=" w-6"></EyeIcon></button> : <button type="button" onClick={()=>setFieldType("password")}><EyeSlashIcon className="w-6"></EyeSlashIcon></button>}
+            </div>
             <PasswordError/>
         </div>
         <div className="form-control w-full mt-4">

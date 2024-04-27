@@ -5,11 +5,16 @@ import { GETUserRecipes } from "./api/recipes";
 import { Suspense } from "react";
 import Loading from "./ui/intermediaries/loading";
 import RefreshRetry from "./ui/intermediaries/refreshRetry";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "RecipeKamu | Home",
+  description: "This is a simple website that aims to provide users with the ability to easily create recipes, then share them via a simple link, or simply keep the link for their own reference.",
+};
 
 export default async function Home() {
   const tokenIsValid = await validateToken()
-  let recipeList = []
+  //let recipeList = []
   let refresh = false
   let isLoggedIn = false
   if(tokenIsValid.tryRefresh&&tokenIsValid.tryRefresh===true){
@@ -17,7 +22,7 @@ export default async function Home() {
   }
   if(tokenIsValid.success===true){
     isLoggedIn = true
-    recipeList = await GETUserRecipes()
+    //recipeList = await GETUserRecipes()
   }
 
   
@@ -25,7 +30,8 @@ export default async function Home() {
   return (
     <Suspense fallback={<Loading/>}>
     <main className="flex min-h-screen flex-col mx-auto w-[97%] lg:max-w-[1100px]">
-        <HomePage recipeList={recipeList} isLoggedIn={isLoggedIn}></HomePage>
+        <HomePage isLoggedIn={isLoggedIn}></HomePage>
+        <div className="h-10"></div>
     </main>
     </Suspense>
   );

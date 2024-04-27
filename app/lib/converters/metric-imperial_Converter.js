@@ -426,6 +426,7 @@ export function convertToMetric(ImperialText){
             if(unitString==="foot"||unitString==="ft"||unitString==="feet"){
                 if(i===0){
                     continue
+                    
                 }
                 const number = Number(arr[i-1].replaceAll(/[,(]/g,""))
                 if(!number){
