@@ -108,7 +108,7 @@ export async function POSTSignoutUser(){ //formerly signUserOut()
         AccessToken: await getTokenFromCookie(),
         RefreshToken: await getRefreshTokenFromCookie()
     }
-    console.log(tokens)
+    
     try{
         const resp = await fetch(
             process.env.BACKEND_BASE_URL+"/api/User/logout",{
@@ -120,7 +120,7 @@ export async function POSTSignoutUser(){ //formerly signUserOut()
             }
         )
         const res = await resp.json()
-        console.log(res)
+        
     }catch{
 
     }

@@ -18,7 +18,7 @@ export async function POSTCreateNewRecipe(recipe:Recipe){
         }
     )
     const res = await resp.json()
-    console.log(res)
+    
     return res
 
     }catch(error){
@@ -40,7 +40,7 @@ export async function POSTDescriptionImage(image:Description_Image){
             }
         )
         const res = await resp.json()
-        console.log(res)
+        
         return res
     }catch(error){
         console.log(error)
@@ -105,7 +105,7 @@ export async function GETRecipe(uuid:string){
                     }
                 }         
             )
-            console.log("respstatus:"+resp.status)
+            
             return resp
         }   
     }catch(error){
@@ -165,7 +165,7 @@ export async function POSTUploadUpdatedRecipeImage(image:Description_Image){
                 body: JSON.stringify(image)
             }
         )
-        console.log(resp)
+        
         return resp
     }catch(error){
         console.log(error)
@@ -175,7 +175,6 @@ export async function POSTUploadUpdatedRecipeImage(image:Description_Image){
 export async function POSTUpdatedDescriptionImage(image:Description_Image){
     try{
         const token = await getTokenFromCookie()
-        console.log("descImage: "+JSON.stringify(image))
         const resp = await fetch(
             process.env.BACKEND_BASE_URL+"/api/Recipe/UpdateDescriptionImage",{
                 method: "POST",
@@ -216,8 +215,7 @@ export async function DELETERecipe(recipeUUID:string) {
 export async function DELETEUnusedImages(imgUrls:string[]|FormDataEntryValue[]){
     try{
         const token = await getTokenFromCookie()
-        console.log(imgUrls)
-        console.log("imgUrls: "+JSON.stringify(imgUrls))
+        
         if(token){
             const resp = await fetch(
                 process.env.BACKEND_BASE_URL+"/api/Recipe/UnusedImages/Delete",{

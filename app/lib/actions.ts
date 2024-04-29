@@ -122,19 +122,15 @@ export async function createNewRecipe(formData: FormData){
 
     const recipeErrors = validateRecipe(recipe)
     if(recipeErrors){
-      console.log(JSON.stringify(recipeErrors))
       return recipeErrors
     }
 
-    console.log("All clear")
     const recipeCreationRes = await POSTCreateNewRecipe(recipe)
 
     if(!recipeCreationRes.uuid){ //if does not contain property, was unsuccessful
         console.log("Recipe creation failed")
         return
     }
-
-    console.log("Instructions: "+JSON.stringify(recipeCreationRes.instructions))
 
     //Upload description image, if any
     const descriptionImage = formData.get('description-image') as File
@@ -259,6 +255,8 @@ export async function updateRecipe(formData: FormData){
         isViewableByPublic = true
     }
 
+    //list of existing image urls
+    let oriImageUrls = formData.getAll('oriImageUrls')
     //filter out instruction image selection radiobutton options
     const filteredKeys = Array.from(formData.keys()).filter(key => key.startsWith('instruction-image-option-'));
     // Retrieve values for the filtered keys
@@ -291,17 +289,15 @@ export async function updateRecipe(formData: FormData){
         isViewableByPublic: isViewableByPublic,
         ingredients: ingredients,
         notes: notes,
-        instructions: instructions
+        instructions: instructions,
+        existingUrls: oriImageUrls
       }
 
     const recipeErrors = validateRecipe(recipe)
     if(recipeErrors){
-        console.log(JSON.stringify(recipeErrors))
         return recipeErrors
       }
-  
-      console.log("All clear")
-      console.log("Recipe: "+JSON.stringify(recipe))
+
 
     const resp = await PUTRecipe(recipe)
     if(!resp){
@@ -351,8 +347,10 @@ export async function updateRecipe(formData: FormData){
             recipeUUID: recipeUpdateResponse.uuid,
             filetype: "image",
             filename: descriptionImageFilename?.toString(),
-            url: descriptionImageUrl?.toString()
+            url: descriptionImageUrl?.toString(),
+            existingUrls: oriImageUrls
         }
+
         await POSTUpdatedDescriptionImage(descImageJson)
     }else if(descriptionImageOption==="none"){
         const recipeUUID = recipeUpdateResponse.uuid
@@ -389,7 +387,7 @@ export async function updateRecipe(formData: FormData){
 
     }
 
-    let oriImageUrls = formData.getAll('oriImageUrls')
+    
     await DELETEUnusedImages(oriImageUrls)
 
     revalidatePath('/recipes/'+recipe.uuid)
@@ -477,7 +475,7 @@ export async function updateUserDetails(formData:FormData){
             message:res.message
         } 
     }else{
-            console.log(res)
+
             putTokenIntoCookie(res.token)
             revalidatePath('/users/profile')
             redirect('/users/profile')

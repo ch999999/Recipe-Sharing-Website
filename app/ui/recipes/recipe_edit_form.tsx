@@ -3,6 +3,7 @@ import {useRef} from "react"
 import { useState } from "react"
 import { updateRecipe } from "@/app/lib/actions"
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
+import {ExclamationCircleIcon} from "@heroicons/react/24/outline"
 import ValidateImage from "@/app/lib/validators/ImageValidator"
 import {ArrowUpIcon, ArrowDownIcon} from "@heroicons/react/24/outline"
 import { useFormStatus } from "react-dom"
@@ -114,6 +115,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
     const [showPrivateTooltip, setShowPrivateTooltip] = useState(false)
     const [showPublicTooltip, setShowPublicTooltip] = useState(false)
     const [showEnlargedDescriptionImage, setShowEnlargedDescriptionImage] = useState(false);
+    const [showUpdateWarningTooltip, setShowUpdateWarningTooltip] = useState(false)
 
     //original field values
     const oriRecipe = recipeData.recipe
@@ -659,6 +661,10 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
         <option key={i.id}>{i.filename}</option>
     )
 
+    const oriImageItems = oriImageList.map(i=>
+        <input key={i.id} name="oriImageUrls" className="hidden" defaultValue={i.url}></input>
+    )
+
     const instructionItems = instructions.map(i=>
         <tbody key={i.id}>
             <tr className="border border-gray-300">
@@ -676,11 +682,11 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                     <div className="mb-1 flex flex-col sm:flex-row">
                                         <label className="ml-2" htmlFor={"instruction-image-existing-"+i.id}>Choose from existing:</label>
                                         <div className="flex flex-row relative w-[250px] sm:w-[351px] md:w-[452px]">
-                                            <select name="instruction-image-filename" value={i.existingImageFileName} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={(e)=>{updateInstructionImageExistingUrl(i.id, e.target.selectedIndex)}}>
+                                            <select name="instruction-image-filename" value={i.existingImageFileName} className="ml-2 mr-2 min-w-36 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={(e)=>{updateInstructionImageExistingUrl(i.id, e.target.selectedIndex)}}>
                                                 {imageSelectItems}
                                             </select>
                                             <div>
-                                                <input id={"instruction-image-url-"+i.id} className="input hidden" name="instruction-image-url" value={i.existingImageUrl} onChange={()=>{}}></input> {/*value flag*/}
+                                                <input id={"instruction-image-url-"+i.id} className="hidden input " name="instruction-image-url" value={i.existingImageUrl} onChange={()=>{}}></input> {/*value flag*/}
                                                 <img id={"instruction-mini-image-"+i.id} className="h-8 w-12" alt="Failed to load" src={i.existingImageUrl} onMouseEnter={()=>showPopupImage(i.id)} onMouseLeave={()=>hidePopupImage(i.id)}></img>
                                                 <div id={"instruction-image-popup-"+i.id} ref={(instrImagePopupNode)=>{const instrImagePopupMap=getInstrImagePopupMap(); if(instrImagePopupNode){instrImagePopupMap.set(i.id,instrImagePopupNode);}else instrImagePopupMap.delete(i.id)}} className="hidden">
                                                 <div className=" -translate-x-16 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>
@@ -792,6 +798,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
             <h1 className="text-xl font-bold text-center">{"Edit "+oriTitle}</h1>
             <form className="mb-40 mx-auto w-[97%] border rounded-lg border-gray-400 p-2 lg:max-w-[1100px]" action={async(e)=>{const newState = await updateRecipe(e); if(!newState){return} setState(newState); scrollToError(newState)}}>
                 <input className="hidden" name="recipe-uuid" defaultValue={oriRecipe.uuid}></input>
+                {oriImageItems}
                 <div className="flex flex-row">
                     <label className="label mr-[7px]" htmlFor="title-input"><span className=" text-base font-bold">Title</span><span className="text-base text-red-600">*</span></label>
                     <input id="title-input" type="text" name="title" aria-describedby="title-error" className="h-10 input w-44 sm:w-96 outline outline-1 outline-gray-400" onChange={(e)=>setTitle(e.target.value)} value={title}/>
@@ -840,7 +847,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                                             <select name="description-image-filename" value={existingDescriptionImage.filename} className="ml-2 mr-2 max-w-36 outline outline-1 outline-gray-300 px-2 h-8 rounded-md bg-gray-100" onChange={e=>{updateDescriptionImageExistingUrl(e.target.selectedIndex)}}>
                                                 {imageSelectItems}
                                             </select>
-                                            <input className="hidden" name="description-image-url" value={existingDescriptionImage.url} onChange={()=>{}}></input>{/*value flag*/}
+                                            <input className="hidden input " name="description-image-url" value={existingDescriptionImage.url} onChange={()=>{}}></input>{/*value flag*/}
                                             <div>
                                                 <img className="h-8 w-12" alt="" src={existingDescriptionImage.url} onMouseEnter={()=>setShowEnlargedDescriptionImage(true)} onMouseLeave={()=>setShowEnlargedDescriptionImage(false)}></img>
                                                 {showEnlargedDescriptionImage && <div className=" -translate-x-20 sm:-translate-x-44 md:-translate-x-[270px] absolute right-2 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-b-[20px] border-b-gray-600"></div>}
@@ -995,7 +1002,7 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                     <div className="relative mt-3">
                     <InformationCircleIcon className="ml-1 w-6" onMouseEnter={()=>setShowNotesTooltip(true)} onMouseLeave={()=>setShowNotesTooltip(false)}></InformationCircleIcon>
                     {showNotesTooltip && <div className=" absolute right-2 bottom-8 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-t-[20px] border-t-gray-600"></div>}
-                    {showNotesTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-14 z-[1] bottom-[50px]"><span>Any additional tips you didn&apos;t include in ingredients or instructions.<br></br>
+                    {showNotesTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-48 z-[1] bottom-[50px]"><span>Any additional tips you didn&apos;t include in ingredients or instructions.<br></br>
                         Add Note: Adds note to bottom of the list<br></br>
                         + Icon: Adds note below<br></br>
                         x Icon: Removes the note<br></br>
@@ -1038,6 +1045,14 @@ export default function RecipeEditPage({recipeData}:{recipeData:{recipe:Recipe, 
                 </div>
                 <div className="mt-3 mb-7 flex flex-row-reverse">
                     <SubmitButton></SubmitButton>
+                    {
+                    oriImageList.length>0 &&
+                    <div className="relative mt-2 mr-2">
+                    <ExclamationCircleIcon className="ml-1 w-9 text-red-500" onMouseEnter={()=>setShowUpdateWarningTooltip(true)} onMouseLeave={()=>setShowUpdateWarningTooltip(false)}></ExclamationCircleIcon>
+                    {showUpdateWarningTooltip && <div className=" absolute right-2 bottom-8 border-l-[5px] border-solid border-l-transparent border-r-[5px] border-r-transparent border-t-[20px] border-t-gray-600"></div>}
+                    {showUpdateWarningTooltip && <p className="text-left p-1 bg-gray-600 text-white tooltip absolute w-72 right-1 translate-x-28 z-[1] bottom-[50px]">Warning: Any existing images you do not utilize will be permanently removed from the system.</p>}
+                    </div>
+                    }
                 </div>
             </form>
         </>
