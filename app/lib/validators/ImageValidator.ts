@@ -7,13 +7,13 @@ export default function ValidateImage(file:File){
         }
     }
     if(!isImageType(file)){
-        console.log("file type invalid")
+        
         return {
             imageError: "Invalid file type",
             message: "Only images accepted" 
         }
     }
-    console.log("file type ok")
+    
     return null
 }
 

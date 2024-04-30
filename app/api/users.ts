@@ -73,10 +73,12 @@ export async function POSTCreateNewUser(user:User){ //formerly createUser(user:U
             body: JSON.stringify(user)
         }
     )
-
+    console.log("resp: "+JSON.stringify(resp))
     const res = await resp.json()
+    //console.log("res: "+res)
     return res
     }catch(error){
+        console.log(error)
         return {errorField:"password", message: "Unknown error occured. Try again later"}
     }
 }

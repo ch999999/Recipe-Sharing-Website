@@ -51,7 +51,7 @@ export default async function Page({params}:{params:{uuid:string}}){
     
     if(recipeResp?.status===200){
         const recipeData = res
-        console.log(recipeData)
+        //console.log(recipeData)
         return(
             <Suspense fallback={<Loading/>}>
             <View recipeData = {recipeData} uuid={uuid}>        
