@@ -8,7 +8,7 @@ This is the frontend code repository for a website that users can use to easily 
 The frontend is written using the [`Next.js`](https://nextjs.org/) framework for React. The current implementation uses [`Vercel`](https://vercel.com/) for deployment.
 
 ## Backend
-The backend consists of an ASP.NET Core API app, a PostgreSQL database and a [`AWS S3 Bucket`](https://aws.amazon.com/s3/) for storing images. The current implementation uses [`Microsoft Azure`](https://azure.microsoft.com/) to deploy both the API app and the Postgre database.
+The backend consists of an ASP.NET Core API app, a PostgreSQL database and a [`AWS S3 Bucket`](https://aws.amazon.com/s3/) for storing images. The current implementation uses [`Microsoft Azure`](https://azure.microsoft.com/) to deploy both the API app and the Postgre database. The backend source code will be made public at a later date.
 
 ## Feedback and Bug Reports
 Feedback, suggestions and bugs can be reported to recipekamufeedback@outlook.com at this time.
