@@ -1,6 +1,8 @@
 This is the frontend code repository for a website that users can use to easily create and share recipes (ie. a recipe sharing website). A live implementation is available at https://recipekamu.vercel.app . Instsructions for basic use of the website are found on the [`home page`](https://recipekamu.vercel.app) of the website. The software architecture of the website is explained below.
 
-## Getting Started
+## Architecture Overview
+![Software Architecture](https://github.com/ch999999/RecipesFrontend/blob/master/Extra_Images/architecture.PNG)
+*Simple diagram showing the general architecture of the current implementation*
 
 First, run the development server:
 
