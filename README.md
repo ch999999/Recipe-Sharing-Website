@@ -1,5 +1,4 @@
-This is the frontend for a website that users can use to easily create and share recipes (ie. a recipe sharing website). A live implementation is available at https://recipekamu.vercel.app
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is the frontend code repository for a website that users can use to easily create and share recipes (ie. a recipe sharing website). A live implementation is available at https://recipekamu.vercel.app . Instsructions for basic use of the website are found on the [`home page`](https://recipekamu.vercel.app) of the website. The software architecture of the website is explained below.
 
 ## Getting Started
 
