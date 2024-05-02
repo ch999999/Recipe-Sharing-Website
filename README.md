@@ -7,8 +7,9 @@ This is the frontend code repository for a website that users can use to easily 
 ## Frontend
 The frontend is written using the [`Next.js`](https://nextjs.org/) framework for React. The current implementation uses [`Vercel`](https://vercel.com/) for deployment.
 
-## Deploy on Vercel
+## Backend
+The backend consists of an ASP.NET Core API app, a PostgreSQL database and a [`AWS S3 Bucket`](https://aws.amazon.com/s3/) for storing images. The current implementation uses [`Microsoft Azure`](https://azure.microsoft.com/) to deploy both the API app and the Postgre database. The backend source code will be made public at a later date.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Feedback and Bug Reports
+Feedback, suggestions and bugs can be reported to recipekamufeedback@outlook.com at this time.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
