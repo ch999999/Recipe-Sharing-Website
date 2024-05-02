@@ -17,7 +17,7 @@ function utcToLocal(utcDateTimeString:Date|undefined){
 
 export default function UserRecipes({recipeList}:{recipeList:Recipe[]}){
     function copyToClipboard(uuid:string){
-        navigator.clipboard.writeText(process.env.NEXT_PUBLIC_DOMAIN+"/recipes/"+uuid)
+        navigator.clipboard.writeText(process.env.NEXT_PUBLIC_DOMAIN+"/recipes/"+uuid )
     }
 
     if(recipeList.length>0){
@@ -30,7 +30,7 @@ export default function UserRecipes({recipeList}:{recipeList:Recipe[]}){
                 <tr className="border border-gray-300">
                 <td className="text-center align-top border border-gray-300">{count+"."}</td>
                 <td className="border border-gray-300 w-fit"><div className="ml-1"><span className="font-semibold">{r.title}</span><br></br>
-                    <div className="md:flex md:flex-row "><div>Link: <Link href={"/recipes/"+r.uuid}><span className="underline text-blue-500">{"localhost:3000"+"/recipes/"+r.uuid}</span></Link><button onClick={()=>{if(!r.uuid){return} copyToClipboard(r.uuid)}} className="align-middle mb-1 ml-1"><ClipboardIcon className="w-5"></ClipboardIcon></button></div></div>
+                    <div className="md:flex md:flex-row "><div>Link: <Link href={"/recipes/"+r.uuid}><span className="underline text-blue-500">{process.env.NEXT_PUBLIC_DOMAIN+"/recipes/"+r.uuid}</span></Link><button onClick={()=>{if(!r.uuid){return} copyToClipboard(r.uuid)}} className="align-middle mb-1 ml-1"><ClipboardIcon className="w-5"></ClipboardIcon></button></div></div>
                     <span className="md:hidden">Created: {utcToLocal(r.createdDate)}</span>
                     <br className="md:hidden"></br><span className="md:hidden">Modified: {utcToLocal(r.lastModifiedDate)}</span>
                     </div>
